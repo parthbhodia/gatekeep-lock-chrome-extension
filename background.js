@@ -1,4 +1,4 @@
-// background.js — Fat Cat Break service worker
+// background.js — Cat Break service worker
 // Tracks active tab time per domain and triggers the cat when limits are hit.
 
 let activeTabId = null;
