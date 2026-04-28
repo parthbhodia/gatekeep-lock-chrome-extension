@@ -30,6 +30,7 @@ async function load() {
   enforceKnownVideo();
   render();
   bindEvents();
+  refreshShooCatState();
 }
 
 function enforceKnownVideo() {
@@ -209,6 +210,13 @@ function bindEvents() {
   });
 
   document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
+  document.getElementById('shoo-cat-btn').addEventListener('click', shooCatAway);
+  document.getElementById('shoo-cat-btn-settings').addEventListener('click', shooCatAway);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      flushPendingSave();
+    }
+  });
 }
 
 function setActiveTab(tabId) {
@@ -218,6 +226,7 @@ function setActiveTab(tabId) {
   document.querySelectorAll('.tab-panel').forEach((panel) => {
     panel.classList.toggle('is-active', panel.dataset.panel === tabId);
   });
+  refreshShooCatState();
 }
 
 function queueSave() {
@@ -226,7 +235,15 @@ function queueSave() {
   saveTimeout = setTimeout(saveSettings, 280);
 }
 
+function flushPendingSave() {
+  if (!saveTimeout) return;
+  clearTimeout(saveTimeout);
+  saveTimeout = null;
+  saveSettings();
+}
+
 async function saveSettings() {
+  saveTimeout = null;
   if (isSaving) return;
   isSaving = true;
   try {
@@ -247,6 +264,7 @@ function setSaveStatus(text, stateClass) {
 }
 
 async function previewCatNow() {
+  flushPendingSave();
   const msg = document.getElementById('preview-msg');
   msg.textContent = '';
 
@@ -268,8 +286,47 @@ async function previewCatNow() {
       force: true
     });
     msg.textContent = 'Cat sent to this tab.';
+    setTimeout(refreshShooCatState, 400);
   } catch {
     msg.textContent = 'Reload this page, then try again.';
+  }
+}
+
+async function shooCatAway() {
+  const msg = document.getElementById('preview-msg');
+  msg.textContent = '';
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
+      msg.textContent = 'Open a normal website tab first.';
+      return;
+    }
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'SHOO_CAT' });
+    if (response?.dismissed) {
+      msg.textContent = 'Cat shooed away.';
+    } else {
+      msg.textContent = 'No active cat on this tab.';
+    }
+  } catch {
+    msg.textContent = 'Reload this page, then try again.';
+  } finally {
+    refreshShooCatState();
+  }
+}
+
+async function refreshShooCatState() {
+  const buttons = [...document.querySelectorAll('.shoo-cat-btn')];
+  if (buttons.length === 0) return;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
+      buttons.forEach((button) => button.classList.add('is-hidden'));
+      return;
+    }
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CAT_STATE' });
+    buttons.forEach((button) => button.classList.toggle('is-hidden', !response?.active));
+  } catch {
+    buttons.forEach((button) => button.classList.add('is-hidden'));
   }
 }
 

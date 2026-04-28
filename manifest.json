@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Fat Cat Break",
   "version": "1.0",
-  "description": "A fat cat shows up when you've been on a site too long. Time to take a break!",
-  "permissions": ["tabs", "storage", "alarms", "windows"],
+  "description": "A cat shows up when you've been on a site too long. Time to take a break!",
+  "permissions": ["tabs", "storage", "alarms", "windows", "scripting"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js"

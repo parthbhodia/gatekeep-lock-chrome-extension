@@ -419,6 +419,27 @@ body {
   opacity: 0.93;
 }
 
+.shoo-cat-btn {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #d4d8ea;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #f8f9ff;
+  color: #4a4f68;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.shoo-cat-btn:hover {
+  background: #eef1ff;
+}
+
+.shoo-cat-btn.is-hidden {
+  display: none;
+}
+
 .preview-msg {
   min-height: 16px;
   margin-top: 8px;

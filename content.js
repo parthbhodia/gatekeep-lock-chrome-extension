@@ -1,3 +1,7 @@
+(() => {
+if (window.__fcbContentScriptLoaded) return;
+window.__fcbContentScriptLoaded = true;
+
 // content.js — injected into every page
 // Shows the real cat overlay when the background says it's time.
 
@@ -7,9 +11,12 @@ let catShownAt = 0;
 let hideTimer = null;
 let countdownTimer = null;
 let drawFrameId = null;
+let dialogHideTimer = null;
+let pausedVideos = [];
+let keydownHandler = null;
 const catVideoUrls = new Map();
-const RESHOW_INTERVAL = 10 * 60 * 1000; // Don't re-show within 10 min of dismissal
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
+const DIALOG_HIDE_MS = 5 * 1000;
 const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
 const ALLOWED_CAT_VIDEO_FILES = new Set([
   'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4',
@@ -18,11 +25,29 @@ const ALLOWED_CAT_VIDEO_FILES = new Set([
   'snaptik_7632449998856178965_v3.mp4'
 ]);
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'FCB_PING') {
+    sendResponse({ ok: true });
+    return;
+  }
+
+  if (msg.type === 'GET_CAT_STATE') {
+    sendResponse({ active: Boolean(catOverlay) });
+    return;
+  }
+
+  if (msg.type === 'SHOO_CAT') {
+    if (catOverlay) {
+      dismissWithOptions({ resetSite: true, resumePaused: false });
+      sendResponse({ ok: true, dismissed: true });
+      return;
+    }
+    sendResponse({ ok: true, dismissed: false });
+    return;
+  }
+
   if (msg.type === 'SHOW_CAT') {
-    const now = Date.now();
     if (catOverlay) return;
-    if (!msg.force && now - catShownAt < RESHOW_INTERVAL) return;
     showCat(msg.domain, msg.timeSpent, msg.limit, msg.lingerMs, msg.videoFile);
   }
 });
@@ -30,6 +55,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE) {
   currentDomain = domain;
   catShownAt = Date.now();
+  pauseVisibleVideos();
   const safeLingerMs = Math.max(6 * 1000, Number(lingerMs) || DEFAULT_LINGER_MS);
   const safeVideoFile = getSafeCatVideoFile(videoFile);
   const timeStr = formatTime(timeSpent);
@@ -47,14 +73,10 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
         <div class="fcb-floor-shadow"></div>
       </div>
     </div>
-    <div class="fcb-card">
-      <p class="fcb-title">The fat cat has claimed your screen</p>
+    <div class="fcb-card" id="fcb-card">
+      <button class="fcb-card-close" id="fcb-card-close" aria-label="Close dialog">×</button>
+      <p class="fcb-title">The cat has claimed your screen</p>
       <p class="fcb-body">You've been on <strong>${escapeHTML(domain)}</strong><br>for <strong>${timeStr}</strong> (limit: ${limitStr})</p>
-      <div class="fcb-actions">
-        <button class="fcb-btn fcb-primary" id="fcb-break">I'll take a break</button>
-        <button class="fcb-btn fcb-snooze" id="fcb-5min">5 more minutes</button>
-        <button class="fcb-btn fcb-ghost" id="fcb-15min">15 more minutes</button>
-      </div>
     </div>
   `;
 
@@ -63,12 +85,22 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   const video = document.getElementById('fcb-source-video');
   const canvas = document.getElementById('fcb-cat-canvas');
   const timer = document.getElementById('fcb-timer');
+  const card = document.getElementById('fcb-card');
+  const cardClose = document.getElementById('fcb-card-close');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const buffer = document.createElement('canvas');
   const bufferCtx = buffer.getContext('2d', { willReadFrequently: true });
 
-  attachActions();
   requestAnimationFrame(() => requestAnimationFrame(() => catOverlay?.classList.add('fcb-in')));
+  cardClose?.addEventListener('click', hideDialog);
+  dialogHideTimer = setTimeout(hideDialog, DIALOG_HIDE_MS);
+  keydownHandler = (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    dismissWithOptions({ resetSite: true, resumePaused: false });
+  };
+  window.addEventListener('keydown', keydownHandler, true);
 
   try {
     video.src = getCatVideoUrl(safeVideoFile);
@@ -85,24 +117,49 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   }, 250);
 
   hideTimer = setTimeout(() => {
-    chrome.runtime.sendMessage({ type: 'SNOOZE', domain: currentDomain, duration: RESHOW_INTERVAL });
-    dismiss();
+    dismissWithOptions({ resetSite: true, resumePaused: true });
   }, safeLingerMs);
 }
 
-function attachActions() {
-  document.getElementById('fcb-break').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'RESET_SITE', domain: currentDomain });
-    dismiss();
+function pauseVisibleVideos() {
+  pausedVideos = [];
+  const videos = document.querySelectorAll('video');
+  videos.forEach((video) => {
+    if (video.paused || video.ended) return;
+    if (!isElementVisible(video)) return;
+    try {
+      video.pause();
+      pausedVideos.push(video);
+    } catch {
+      // Ignore pause failures per element.
+    }
   });
-  document.getElementById('fcb-5min').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'SNOOZE', domain: currentDomain, duration: 5 * 60 * 1000 });
-    dismiss();
+}
+
+function resumePausedVideos() {
+  pausedVideos.forEach((video) => {
+    try {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    } catch {
+      // Ignore resume failures per element.
+    }
   });
-  document.getElementById('fcb-15min').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'SNOOZE', domain: currentDomain, duration: 15 * 60 * 1000 });
-    dismiss();
-  });
+  pausedVideos = [];
+}
+
+function isElementVisible(element) {
+  const rect = element.getBoundingClientRect();
+  return (
+    rect.width > 2 &&
+    rect.height > 2 &&
+    rect.bottom > 0 &&
+    rect.right > 0 &&
+    rect.top < window.innerHeight &&
+    rect.left < window.innerWidth
+  );
 }
 
 function getSafeCatVideoFile(videoFile) {
@@ -229,10 +286,28 @@ function getAlphaBounds(pixels, width, height, padding) {
 }
 
 function dismiss() {
+  dismissWithOptions({ resetSite: false, resumePaused: false });
+}
+
+function dismissWithOptions(options = {}) {
+  const { resetSite = false, resumePaused = false } = options;
   if (!catOverlay) return;
   clearTimeout(hideTimer);
+  clearTimeout(dialogHideTimer);
   clearInterval(countdownTimer);
   cancelAnimationFrame(drawFrameId);
+  if (keydownHandler) {
+    window.removeEventListener('keydown', keydownHandler, true);
+    keydownHandler = null;
+  }
+  if (resetSite) {
+    chrome.runtime.sendMessage({ type: 'RESET_SITE', domain: currentDomain });
+  }
+  if (resumePaused) {
+    resumePausedVideos();
+  } else {
+    pausedVideos = [];
+  }
 
   const video = document.getElementById('fcb-source-video');
   video?.pause();
@@ -243,6 +318,13 @@ function dismiss() {
     catOverlay?.remove();
     catOverlay = null;
   }, 450);
+}
+
+function hideDialog() {
+  const card = document.getElementById('fcb-card');
+  if (!card || card.classList.contains('fcb-card-hidden')) return;
+  card.classList.add('fcb-card-hidden');
+  setTimeout(() => card.remove(), 260);
 }
 
 function smoothstep(edge0, edge1, value) {
@@ -361,3 +443,5 @@ function escapeHTML(value) {
     "'": '&#39;'
   }[char]));
 }
+
+})();
