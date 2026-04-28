@@ -10,7 +10,7 @@ let drawFrameId = null;
 const catVideoUrls = new Map();
 const RESHOW_INTERVAL = 10 * 60 * 1000; // Don't re-show within 10 min of dismissal
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
-const DEFAULT_CAT_VIDEO_FILE = 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4';
+const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
 const ALLOWED_CAT_VIDEO_FILES = new Set([
   'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4',
   'snaptik_7330929514878356741_v3.mp4',

@@ -1,44 +1,94 @@
-// popup.js
+const DEFAULT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
+const DEFAULT_LIMIT_CHIPS = [15, 30, 45, 60, 90, 120];
+const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5, 10];
+const CAT_VIDEOS = [
+  { file: 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4', label: 'Sad Cat' },
+  { file: 'snaptik_7330929514878356741_v3.mp4', label: 'Playful Cat' },
+  { file: 'snaptik_7313952845961645314_v3.mp4', label: 'Curious Cat' },
+  { file: 'snaptik_7632449998856178965_v3.mp4', label: 'Chill Cat' }
+];
 
 let settings = {
   defaultLimit: 30 * 60 * 1000,
   siteLimits: {},
   enabled: true,
   catLingerMinutes: 2,
-  catVideoFile: 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4'
+  catVideoFile: DEFAULT_VIDEO_FILE
 };
 let siteTime = {};
-
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+let saveTimeout = null;
+let isSaving = false;
 
 async function load() {
   try {
     const data = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     if (data?.settings) settings = { ...settings, ...data.settings };
-    if (data?.siteTime)  siteTime  = data.siteTime;
+    if (data?.siteTime) siteTime = data.siteTime;
   } catch {
-    // Service worker may not be ready yet on first open
+    // Ignore first-open worker race.
   }
+  enforceKnownVideo();
   render();
+  bindEvents();
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+function enforceKnownVideo() {
+  const exists = CAT_VIDEOS.some((video) => video.file === settings.catVideoFile);
+  if (!exists) settings.catVideoFile = DEFAULT_VIDEO_FILE;
+}
 
 function render() {
-  // Toggle
   document.getElementById('enabled-toggle').checked = settings.enabled !== false;
+  document.getElementById('default-limit').value = Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000));
+  document.getElementById('cat-linger').value = Math.max(0.1, Number(settings.catLingerMinutes ?? 2));
+  document.getElementById('cat-video').value = settings.catVideoFile;
 
-  // Default limit
-  const mins = Math.max(1, Math.round((settings.defaultLimit || 30 * 60 * 1000) / 60000));
-  document.getElementById('default-limit').value = mins;
-  document.getElementById('default-slider').value = Math.min(240, mins);
-
-  const lingerMinutes = Math.max(0.1, Number(settings.catLingerMinutes ?? 2));
-  document.getElementById('cat-linger').value = lingerMinutes;
-  document.getElementById('cat-video').value = settings.catVideoFile || 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4';
-
+  renderDefaultLimitChips();
+  renderCatLingerChips();
   renderStats();
   renderSiteLimits();
+  renderVideoGrid();
+}
+
+function renderDefaultLimitChips() {
+  renderChips(
+    document.getElementById('default-limit-chips'),
+    DEFAULT_LIMIT_CHIPS,
+    Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000)),
+    'm',
+    (value) => {
+      settings.defaultLimit = value * 60 * 1000;
+      document.getElementById('default-limit').value = value;
+      renderDefaultLimitChips();
+      queueSave();
+    }
+  );
+}
+
+function renderCatLingerChips() {
+  renderChips(
+    document.getElementById('cat-linger-chips'),
+    CAT_LINGER_CHIPS,
+    Number(settings.catLingerMinutes ?? 2),
+    'm',
+    (value) => {
+      settings.catLingerMinutes = value;
+      document.getElementById('cat-linger').value = value;
+      renderCatLingerChips();
+      queueSave();
+    }
+  );
+}
+
+function renderChips(container, values, activeValue, suffix, onClick) {
+  container.innerHTML = values.map((value) => {
+    const isActive = Math.abs(Number(activeValue) - Number(value)) < 0.001;
+    return `<button type="button" class="chip ${isActive ? 'is-active' : ''}" data-value="${value}">${value}${suffix}</button>`;
+  }).join('');
+
+  container.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => onClick(Number(chip.dataset.value)));
+  });
 }
 
 function renderStats() {
@@ -51,20 +101,17 @@ function renderStats() {
   }
 
   const maxMs = entries[0][1];
-
   el.innerHTML = entries.map(([domain, ms]) => {
-    const limit  = getDomainLimitMs(domain);
-    const over   = limit > 0 && ms >= limit;
-    const pct    = Math.min(100, (ms / Math.max(maxMs, 1)) * 100);
+    const limit = getDomainLimitMs(domain);
+    const over = limit > 0 && ms >= limit;
+    const pct = Math.min(100, (ms / Math.max(maxMs, 1)) * 100);
     return `
       <div class="stat-item">
         <div class="stat-row">
           <span class="stat-domain" title="${domain}">${domain}</span>
           <span class="stat-time ${over ? 'over' : ''}">${fmtMs(ms)}${over ? ' ⚠' : ''}</span>
         </div>
-        <div class="stat-bar">
-          <div class="stat-fill ${over ? 'over' : ''}" style="width:${pct}%"></div>
-        </div>
+        <div class="stat-bar"><div class="stat-fill ${over ? 'over' : ''}" style="width:${pct}%"></div></div>
       </div>`;
   }).join('');
 }
@@ -82,76 +129,124 @@ function renderSiteLimits() {
     <div class="site-item">
       <span class="site-item-domain" title="${domain}">${domain}</span>
       <span class="site-item-limit">${Math.round(ms / 60000)}m</span>
-      <button class="site-item-rm" data-d="${domain}" title="Remove">✕</button>
+      <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
     </div>`).join('');
 
-  el.querySelectorAll('.site-item-rm').forEach(btn => {
+  el.querySelectorAll('.site-item-rm').forEach((btn) => {
     btn.addEventListener('click', () => {
       delete settings.siteLimits[btn.dataset.d];
       renderSiteLimits();
+      queueSave();
     });
   });
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function renderVideoGrid() {
+  const grid = document.getElementById('cat-video-grid');
+  grid.innerHTML = CAT_VIDEOS.map((video) => {
+    const selected = video.file === settings.catVideoFile;
+    const src = chrome.runtime.getURL(video.file);
+    return `
+      <button class="video-card ${selected ? 'is-selected' : ''}" type="button" data-video="${video.file}">
+        <video class="video-thumb" src="${src}" muted loop playsinline preload="metadata"></video>
+        <span class="video-label">${video.label}</span>
+      </button>`;
+  }).join('');
 
-function getDomainLimitMs(domain) {
-  const sl = settings.siteLimits || {};
-  return domain in sl ? sl[domain] : (settings.defaultLimit || 30 * 60 * 1000);
+  grid.querySelectorAll('.video-card').forEach((card) => {
+    const videoEl = card.querySelector('.video-thumb');
+    card.addEventListener('mouseenter', () => {
+      videoEl.play().catch(() => {});
+    });
+    card.addEventListener('mouseleave', () => {
+      videoEl.pause();
+      videoEl.currentTime = 0;
+    });
+    card.addEventListener('click', () => {
+      settings.catVideoFile = card.dataset.video;
+      document.getElementById('cat-video').value = card.dataset.video;
+      renderVideoGrid();
+      queueSave();
+    });
+  });
 }
 
-function fmtMs(ms) {
-  const m = Math.floor(ms / 60000);
-  const h = Math.floor(m / 60);
-  return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
+function bindEvents() {
+  document.querySelectorAll('.tab-btn').forEach((button) => {
+    button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+  });
+
+  document.getElementById('enabled-toggle').addEventListener('change', (e) => {
+    settings.enabled = e.target.checked;
+    queueSave();
+  });
+
+  document.getElementById('default-limit').addEventListener('input', (e) => {
+    const value = Math.max(1, parseInt(e.target.value, 10) || 1);
+    settings.defaultLimit = value * 60 * 1000;
+    renderDefaultLimitChips();
+    queueSave();
+  });
+
+  document.getElementById('cat-linger').addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value);
+    settings.catLingerMinutes = Math.max(0.1, Number.isFinite(value) ? value : 2);
+    renderCatLingerChips();
+    queueSave();
+  });
+
+  document.getElementById('add-btn').addEventListener('click', () => {
+    const domain = cleanDomain(document.getElementById('add-domain').value);
+    const mins = parseInt(document.getElementById('add-limit').value, 10);
+    if (!domain || Number.isNaN(mins) || mins < 1) return;
+
+    if (!settings.siteLimits) settings.siteLimits = {};
+    settings.siteLimits[domain] = mins * 60 * 1000;
+    document.getElementById('add-domain').value = '';
+    document.getElementById('add-limit').value = '';
+    renderSiteLimits();
+    queueSave();
+  });
+
+  document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
 }
 
-function cleanDomain(raw) {
-  return raw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+function setActiveTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.tab-panel').forEach((panel) => {
+    panel.classList.toggle('is-active', panel.dataset.panel === tabId);
+  });
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+function queueSave() {
+  setSaveStatus('Saving...', 'is-saving');
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveSettings, 280);
+}
 
-// Sync number ↔ slider
-document.getElementById('default-limit').addEventListener('input', (e) => {
-  const v = Math.max(1, parseInt(e.target.value) || 1);
-  document.getElementById('default-slider').value = Math.min(240, v);
-  settings.defaultLimit = v * 60 * 1000;
-});
+async function saveSettings() {
+  if (isSaving) return;
+  isSaving = true;
+  try {
+    await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings });
+    setSaveStatus('Saved', 'is-saved');
+  } catch {
+    setSaveStatus('Save failed', '');
+  } finally {
+    isSaving = false;
+  }
+}
 
-document.getElementById('default-slider').addEventListener('input', (e) => {
-  const v = parseInt(e.target.value);
-  document.getElementById('default-limit').value = v;
-  settings.defaultLimit = v * 60 * 1000;
-});
+function setSaveStatus(text, stateClass) {
+  const indicator = document.getElementById('save-indicator');
+  indicator.textContent = text;
+  indicator.classList.remove('is-saving', 'is-saved');
+  if (stateClass) indicator.classList.add(stateClass);
+}
 
-document.getElementById('enabled-toggle').addEventListener('change', (e) => {
-  settings.enabled = e.target.checked;
-});
-
-document.getElementById('cat-linger').addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  settings.catLingerMinutes = Math.max(0.1, Number.isFinite(value) ? value : 2);
-});
-
-document.getElementById('cat-video').addEventListener('change', (e) => {
-  settings.catVideoFile = e.target.value;
-});
-
-document.getElementById('add-btn').addEventListener('click', () => {
-  const domain = cleanDomain(document.getElementById('add-domain').value);
-  const mins   = parseInt(document.getElementById('add-limit').value);
-  if (!domain || isNaN(mins) || mins < 1) return;
-
-  if (!settings.siteLimits) settings.siteLimits = {};
-  settings.siteLimits[domain] = mins * 60 * 1000;
-
-  document.getElementById('add-domain').value = '';
-  document.getElementById('add-limit').value  = '';
-  renderSiteLimits();
-});
-
-document.getElementById('preview-cat-btn').addEventListener('click', async () => {
+async function previewCatNow() {
   const msg = document.getElementById('preview-msg');
   msg.textContent = '';
 
@@ -172,20 +267,25 @@ document.getElementById('preview-cat-btn').addEventListener('click', async () =>
       videoFile: settings.catVideoFile,
       force: true
     });
-
     msg.textContent = 'Cat sent to this tab.';
   } catch {
     msg.textContent = 'Reload this page, then try again.';
   }
-});
+}
 
-document.getElementById('save-btn').addEventListener('click', async () => {
-  await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings });
-  const msg = document.getElementById('save-msg');
-  msg.textContent = '✓ Saved!';
-  setTimeout(() => (msg.textContent = ''), 2000);
-});
+function getDomainLimitMs(domain) {
+  const siteLimits = settings.siteLimits || {};
+  return domain in siteLimits ? siteLimits[domain] : (settings.defaultLimit || 30 * 60 * 1000);
+}
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+function fmtMs(ms) {
+  const minutes = Math.floor(ms / 60000);
+  const hours = Math.floor(minutes / 60);
+  return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
+}
+
+function cleanDomain(raw) {
+  return raw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+}
 
 load();

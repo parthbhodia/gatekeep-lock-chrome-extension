@@ -4,6 +4,7 @@
 let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
+const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ async function init() {
         siteLimits: {},
         enabled: true,
         catLingerMinutes: 2,
-        catVideoFile: 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4'
+        catVideoFile: DEFAULT_CAT_VIDEO_FILE
       },
       siteTime: {},
       lastReset: new Date().toDateString(),
@@ -30,7 +31,7 @@ async function init() {
       settings: {
         ...settings,
         catLingerMinutes: settings.catLingerMinutes ?? 2,
-        catVideoFile: settings.catVideoFile ?? 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4'
+        catVideoFile: settings.catVideoFile ?? DEFAULT_CAT_VIDEO_FILE
       }
     });
   }
