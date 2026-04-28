@@ -1,0 +1,9 @@
+*.mp4
+!YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4
+!snaptik_7330929514878356741_v3.mp4
+!snaptik_7313952845961645314_v3.mp4
+!snaptik_7632449998856178965_v3.mp4
+
+# Local preview/runtime artifacts
+terminals/
+agent-transcripts/

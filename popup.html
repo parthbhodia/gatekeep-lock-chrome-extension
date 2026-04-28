@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fat Cat Break</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="logo">🐱</span>
+    <div class="header-text">
+      <h1>Fat Cat Break</h1>
+      <p>Track your browsing time</p>
+    </div>
+    <label class="toggle" title="Enable / disable">
+      <input type="checkbox" id="enabled-toggle" checked>
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+    </label>
+  </div>
+
+  <!-- Default limit -->
+  <div class="section">
+    <span class="label">Default time limit</span>
+    <div class="limit-row">
+      <input type="number" id="default-limit" min="1" max="600" class="num-input">
+      <span class="unit">minutes</span>
+    </div>
+    <input type="range" id="default-slider" min="1" max="240" class="range">
+    <div class="range-labels">
+      <span>1m</span><span>1h</span><span>2h</span><span>4h</span>
+    </div>
+  </div>
+
+  <!-- Today's stats -->
+  <div class="section">
+    <span class="label">Today's usage</span>
+    <div id="stats-list" class="stats-list">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="section">
+    <span class="label">Preview</span>
+    <button id="preview-cat-btn" class="preview-cat-btn">Show walking cat now</button>
+    <p id="preview-msg" class="preview-msg"></p>
+  </div>
+
+  <!-- Cat linger -->
+  <div class="section">
+    <span class="label">Cat linger duration</span>
+    <div class="limit-row">
+      <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
+      <span class="unit">minutes</span>
+    </div>
+    <p class="hint">Default is 2 minutes. Use 0.1 for a quick test.</p>
+  </div>
+
+  <!-- Cat video -->
+  <div class="section">
+    <span class="label">Cat video</span>
+    <select id="cat-video" class="cat-select">
+      <option value="YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4">Sad cat green screen</option>
+      <option value="snaptik_7330929514878356741_v3.mp4">Snaptik cat option 2</option>
+      <option value="snaptik_7313952845961645314_v3.mp4">Snaptik cat option</option>
+      <option value="snaptik_7632449998856178965_v3.mp4">Snaptik cat option 3</option>
+    </select>
+  </div>
+
+  <!-- Per-site limits -->
+  <div class="section">
+    <span class="label">Per-site limits</span>
+    <div id="site-limits" class="site-limits"></div>
+    <div class="add-row">
+      <input type="text" id="add-domain" placeholder="youtube.com" class="site-input">
+      <input type="number" id="add-limit" placeholder="min" min="1" max="600" class="min-input">
+      <button id="add-btn" class="add-btn">Add</button>
+    </div>
+  </div>
+
+  <!-- Save -->
+  <div class="footer">
+    <button id="save-btn" class="save-btn">Save settings</button>
+    <span id="save-msg" class="save-msg"></span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

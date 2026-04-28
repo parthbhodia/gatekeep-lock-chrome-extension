@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Cat Break Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #2a170d;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 198, 125, 0.55), transparent 24rem),
+        radial-gradient(circle at 86% 28%, rgba(255, 112, 67, 0.22), transparent 22rem),
+        linear-gradient(135deg, #fff6e9 0%, #f1d2a9 52%, #a95f30 100%);
+    }
+
+    .preview-page {
+      position: relative;
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: 32px;
+    }
+
+    .preview-card {
+      width: min(720px, 90vw);
+      padding: clamp(28px, 5vw, 56px);
+      border: 2px solid rgba(83, 42, 18, 0.18);
+      border-radius: 36px;
+      background: rgba(255, 250, 242, 0.74);
+      box-shadow: 0 30px 90px rgba(71, 34, 12, 0.24);
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      font: 800 12px/1.2 sans-serif;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #b45a24;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 8vw, 92px);
+      line-height: 0.92;
+    }
+
+    .body {
+      max-width: 48ch;
+      margin: 22px auto 28px;
+      font: 500 17px/1.7 sans-serif;
+      color: rgba(42, 23, 13, 0.72);
+    }
+
+    .preview-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      color: white;
+      background: #1a1a2e;
+      cursor: pointer;
+      font: 800 14px/1 sans-serif;
+      box-shadow: 0 12px 28px rgba(26, 26, 46, 0.24);
+    }
+
+    .preview-button:active {
+      transform: translateY(1px);
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .linger-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid rgba(83, 42, 18, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      font: 800 13px/1 sans-serif;
+    }
+
+    .linger-label input {
+      width: 64px;
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 8px;
+      text-align: center;
+      font: 800 13px/1 sans-serif;
+      color: #1a1a2e;
+      background: white;
+      outline: 2px solid transparent;
+    }
+
+    .linger-label input:focus {
+      outline-color: rgba(245, 160, 85, 0.6);
+    }
+
+    .cat-select {
+      min-width: 260px;
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: 800 13px/1 sans-serif;
+      color: #1a1a2e;
+      background: white;
+      outline: 2px solid transparent;
+    }
+
+    .cat-select:focus {
+      outline-color: rgba(245, 160, 85, 0.6);
+    }
+
+    .preview-note {
+      margin: 14px 0 0;
+      font: 700 12px/1.5 sans-serif;
+      color: rgba(42, 23, 13, 0.55);
+    }
+
+    .cat-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: end start;
+      padding: 0 24px 0 0;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(180deg, rgba(26, 18, 13, 0.04), rgba(26, 18, 13, 0.18));
+      transition: opacity 0.35s ease;
+    }
+
+    .cat-stage.is-visible {
+      opacity: 1;
+    }
+
+    .cat-stage.is-leaving {
+      opacity: 0;
+    }
+
+    .cat-wrap {
+      position: relative;
+      width: min(52vw, 620px);
+      transform: translate(-150px, 34px);
+      transform-origin: 50% 100%;
+    }
+
+    .cat-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 92vh;
+      object-fit: contain;
+      filter: drop-shadow(0 34px 58px rgba(0, 0, 0, 0.2));
+    }
+
+    .cat-stage.is-sitting .cat-canvas {
+      animation: cat-sit-breathe 3s ease-in-out infinite alternate;
+    }
+
+    .cat-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 1.5%;
+      width: 64%;
+      height: 9%;
+      border-radius: 999px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.2), rgba(0,0,0,0) 76%);
+      transform: translateX(-50%);
+      filter: blur(22px);
+    }
+
+    .cat-timer {
+      position: fixed;
+      top: 36%;
+      left: 50%;
+      z-index: 2147483647;
+      transform: translate(-50%, -50%);
+      min-width: 280px;
+      padding: 18px 32px 22px;
+      border-radius: 30px;
+      color: white;
+      background: rgba(0, 0, 0, 0.48);
+      box-shadow: 0 18px 70px rgba(0, 0, 0, 0.36);
+      font: 900 clamp(72px, 13vw, 172px)/0.9 sans-serif;
+      letter-spacing: -0.08em;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      text-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.58),
+        0 1px 2px rgba(0, 0, 0, 0.42);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .cat-timer.is-visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .source-video {
+      display: none;
+    }
+
+    .cutout-warning {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      z-index: 2147483647;
+      max-width: min(560px, calc(100vw - 32px));
+      transform: translateX(-50%);
+      padding: 12px 16px;
+      border-radius: 999px;
+      color: white;
+      background: rgba(26, 26, 46, 0.9);
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24);
+      font: 800 12px/1.35 sans-serif;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .cutout-warning.is-visible {
+      opacity: 1;
+    }
+
+    @keyframes cat-sit-breathe {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-8px) scale(1.01); }
+    }
+  </style>
+</head>
+<body>
+  <main class="preview-page">
+    <section class="preview-card">
+      <p class="eyebrow">Cursor Preview</p>
+      <h1>Real Cat Break</h1>
+      <p class="body">
+        This preview uses a real cat MP4, removes the green screen in the browser,
+        walks her onto the page, then keeps her sitting there for the selected time.
+      </p>
+      <button class="preview-button" type="button" id="preview-trigger">Preview real cat</button>
+      <div class="control-row">
+        <label class="linger-label">
+          Linger
+          <input id="linger-minutes" type="number" min="0.1" step="0.1" value="2">
+          minutes
+        </label>
+        <label class="linger-label">
+          Video
+          <select id="cat-video-choice" class="cat-select">
+            <option value="YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4">Sad cat green screen</option>
+            <option value="snaptik_7330929514878356741_v3.mp4">Snaptik cat option 2</option>
+            <option value="snaptik_7313952845961645314_v3.mp4">Snaptik cat option</option>
+            <option value="snaptik_7632449998856178965_v3.mp4">Snaptik cat option 3</option>
+          </select>
+        </label>
+      </div>
+      <p class="preview-note">Default is 2 minutes. Use 0.1 minutes for a quick six-second test.</p>
+    </section>
+  </main>
+
+  <section class="cat-stage" id="cat-stage" aria-live="polite">
+    <div class="cat-wrap">
+      <canvas class="cat-canvas" id="cat-canvas"></canvas>
+      <div class="cat-shadow"></div>
+    </div>
+  </section>
+  <div class="cat-timer" id="cat-timer">Cat will linger for 2 minutes</div>
+  <div class="cutout-warning" id="cutout-warning">This video is not keyed enough to isolate the cat cleanly.</div>
+  <video class="source-video" id="source-video" src="YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4" muted loop playsinline preload="auto"></video>
+
+  <script>
+    const stage = document.getElementById('cat-stage');
+    const timer = document.getElementById('cat-timer');
+    const video = document.getElementById('source-video');
+    const videoChoice = document.getElementById('cat-video-choice');
+    const canvas = document.getElementById('cat-canvas');
+    const cutoutWarning = document.getElementById('cutout-warning');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const buffer = document.createElement('canvas');
+    const bufferCtx = buffer.getContext('2d', { willReadFrequently: true });
+    let hideTimer = null;
+    let countdownTimer = null;
+    let drawFrameId = null;
+    let warnedAboutCutout = false;
+
+    function setupCanvas() {
+      const { width, height } = getScaledVideoSize();
+      canvas.width = width;
+      canvas.height = height;
+      buffer.width = width;
+      buffer.height = height;
+    }
+
+    function drawCatFrame() {
+      if (video.readyState >= 2) {
+        const targetSize = getScaledVideoSize();
+        if (buffer.width !== targetSize.width || buffer.height !== targetSize.height) {
+          setupCanvas();
+        }
+
+        bufferCtx.drawImage(video, 0, 0, buffer.width, buffer.height);
+        const frame = bufferCtx.getImageData(0, 0, buffer.width, buffer.height);
+        const pixels = frame.data;
+        const width = frame.width;
+        const height = frame.height;
+        const alphaMask = new Uint8ClampedArray(width * height);
+
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const keyStrength = getGreenKeyStrength(r, g, b);
+          const alphaIndex = i / 4;
+
+          if (keyStrength > 0.86) {
+            pixels[i + 3] = 0;
+          } else if (keyStrength > 0.07) {
+            const fade = smoothstep(0.07, 0.86, keyStrength);
+            pixels[i + 3] = Math.round(255 * (1 - fade));
+          }
+
+          if (keyStrength > 0.01 || g > r * 0.82 || g > b + 6) {
+            const neutralGreen = Math.round((r * 0.62) + (b * 0.28) + 10);
+            pixels[i + 1] = Math.min(g, neutralGreen);
+          }
+
+          alphaMask[alphaIndex] = pixels[i + 3];
+        }
+
+        fillAlphaHoles(pixels, alphaMask, width, height);
+        featherAlpha(pixels, alphaMask, width, height);
+
+        for (let i = 3; i < pixels.length; i += 4) {
+          if (pixels[i] < 12) pixels[i] = 0;
+        }
+
+        const bounds = getAlphaBounds(pixels, width, height, 28);
+        if (bounds) {
+          const cropWidth = bounds.maxX - bounds.minX + 1;
+          const cropHeight = bounds.maxY - bounds.minY + 1;
+          const coverage = (cropWidth * cropHeight) / (width * height);
+
+          canvas.width = cropWidth;
+          canvas.height = cropHeight;
+          ctx.putImageData(frame, -bounds.minX, -bounds.minY);
+
+          if (coverage > 0.82 && !warnedAboutCutout) {
+            showCutoutWarning('This video still looks like a full frame. It may not have a removable green-screen background.');
+          }
+        } else {
+          canvas.width = width;
+          canvas.height = height;
+          ctx.clearRect(0, 0, width, height);
+          if (!warnedAboutCutout) {
+            showCutoutWarning('No keyed cat pixels were detected in this video.');
+          }
+        }
+      }
+
+      drawFrameId = requestAnimationFrame(drawCatFrame);
+    }
+
+    function getScaledVideoSize() {
+      const sourceWidth = video.videoWidth || 1920;
+      const sourceHeight = video.videoHeight || 1080;
+      const width = Math.min(1280, sourceWidth);
+      const height = Math.round((sourceHeight / sourceWidth) * width);
+      return { width, height };
+    }
+
+    function smoothstep(edge0, edge1, value) {
+      const x = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+      return x * x * (3 - 2 * x);
+    }
+
+    function getGreenKeyStrength(r, g, b) {
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const maxRedBlue = Math.max(r, b);
+      const saturation = max === 0 ? 0 : (max - min) / max;
+      const greenExcess = g - maxRedBlue;
+      const greenLeaning = g > r * 1.04 && g > b * 1.08;
+
+      if (!greenLeaning || saturation < 0.085) return 0;
+
+      const dominanceStrength = smoothstep(6, 54, greenExcess);
+      const saturationStrength = smoothstep(0.085, 0.42, saturation);
+      const brightnessStrength = smoothstep(18, 74, max);
+      const shadowStrength = greenExcess > 4 ? smoothstep(0.11, 0.32, saturation) * brightnessStrength * 0.62 : 0;
+
+      return Math.min(1, Math.max(dominanceStrength * saturationStrength, shadowStrength));
+    }
+
+    function fillAlphaHoles(pixels, alphaMask, width, height) {
+      const repaired = new Uint8ClampedArray(alphaMask);
+
+      for (let y = 2; y < height - 2; y += 1) {
+        for (let x = 2; x < width - 2; x += 1) {
+          const maskIndex = y * width + x;
+          if (alphaMask[maskIndex] > 32) continue;
+
+          let opaqueNeighbors = 0;
+          let alphaTotal = 0;
+          let redTotal = 0;
+          let greenTotal = 0;
+          let blueTotal = 0;
+
+          for (let oy = -2; oy <= 2; oy += 1) {
+            for (let ox = -2; ox <= 2; ox += 1) {
+              if (ox === 0 && oy === 0) continue;
+              const neighborIndex = (y + oy) * width + x + ox;
+              const neighborAlpha = alphaMask[neighborIndex];
+              if (neighborAlpha <= 132) continue;
+
+              const pixelIndex = neighborIndex * 4;
+              opaqueNeighbors += 1;
+              alphaTotal += neighborAlpha;
+              redTotal += pixels[pixelIndex];
+              greenTotal += pixels[pixelIndex + 1];
+              blueTotal += pixels[pixelIndex + 2];
+            }
+          }
+
+          if (opaqueNeighbors < 16) continue;
+
+          const pixelIndex = maskIndex * 4;
+          repaired[maskIndex] = Math.round(alphaTotal / opaqueNeighbors);
+          pixels[pixelIndex] = Math.round(redTotal / opaqueNeighbors);
+          pixels[pixelIndex + 1] = Math.round(greenTotal / opaqueNeighbors);
+          pixels[pixelIndex + 2] = Math.round(blueTotal / opaqueNeighbors);
+        }
+      }
+
+      alphaMask.set(repaired);
+      for (let i = 0; i < alphaMask.length; i += 1) {
+        pixels[(i * 4) + 3] = alphaMask[i];
+      }
+    }
+
+    function featherAlpha(pixels, alphaMask, width, height) {
+      for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 1; x < width - 1; x += 1) {
+          const maskIndex = y * width + x;
+          const alpha = alphaMask[maskIndex];
+          if (alpha === 0) continue;
+
+          let total = 0;
+          for (let oy = -1; oy <= 1; oy += 1) {
+            for (let ox = -1; ox <= 1; ox += 1) {
+              total += alphaMask[(y + oy) * width + x + ox];
+            }
+          }
+
+          const average = total / 9;
+          const softened = average < alpha ? Math.round(alpha * 0.42 + average * 0.58) : alpha;
+          pixels[(maskIndex * 4) + 3] = Math.min(alpha, softened);
+        }
+      }
+    }
+
+    function getAlphaBounds(pixels, width, height, padding) {
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const alpha = pixels[((y * width + x) * 4) + 3];
+          if (alpha <= 28) continue;
+
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+
+      if (maxX < minX || maxY < minY) return null;
+
+      return {
+        minX: Math.max(0, minX - padding),
+        minY: Math.max(0, minY - padding),
+        maxX: Math.min(width - 1, maxX + padding),
+        maxY: Math.min(height - 1, maxY + padding)
+      };
+    }
+
+    function showCutoutWarning(message) {
+      warnedAboutCutout = true;
+      cutoutWarning.textContent = message;
+      cutoutWarning.classList.add('is-visible');
+    }
+
+    function getLingerMs() {
+      const minutes = parseFloat(document.getElementById('linger-minutes').value);
+      return Math.max(0.1, Number.isFinite(minutes) ? minutes : 2) * 60 * 1000;
+    }
+
+    function formatMinutes(ms) {
+      const minutes = ms / 60000;
+      return `${minutes.toFixed(minutes < 1 ? 1 : 0)} minute${minutes === 1 ? '' : 's'}`;
+    }
+
+    function formatCountdown(ms) {
+      const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    async function previewCat() {
+      const lingerMs = getLingerMs();
+      clearTimeout(hideTimer);
+      clearInterval(countdownTimer);
+      cancelAnimationFrame(drawFrameId);
+      warnedAboutCutout = false;
+      cutoutWarning.classList.remove('is-visible');
+
+      if (video.getAttribute('src') !== videoChoice.value) {
+        video.pause();
+        video.setAttribute('src', videoChoice.value);
+        video.load();
+      }
+
+      setupCanvas();
+      stage.classList.remove('is-visible', 'is-leaving', 'is-sitting');
+      void stage.offsetWidth;
+
+      video.currentTime = 0;
+      await video.play();
+      drawCatFrame();
+
+      const endsAt = Date.now() + lingerMs;
+      timer.textContent = formatCountdown(lingerMs);
+      stage.classList.add('is-visible', 'is-sitting');
+      timer.classList.add('is-visible');
+      countdownTimer = setInterval(() => {
+        timer.textContent = formatCountdown(endsAt - Date.now());
+      }, 250);
+
+      hideTimer = setTimeout(() => {
+        stage.classList.add('is-leaving');
+        timer.classList.remove('is-visible');
+        cutoutWarning.classList.remove('is-visible');
+        clearInterval(countdownTimer);
+        setTimeout(() => {
+          stage.classList.remove('is-visible', 'is-leaving', 'is-sitting');
+          video.pause();
+          cancelAnimationFrame(drawFrameId);
+        }, 450);
+      }, lingerMs);
+    }
+
+    document.getElementById('preview-trigger').addEventListener('click', previewCat);
+    video.addEventListener('loadedmetadata', setupCanvas);
+    window.addEventListener('DOMContentLoaded', () => setTimeout(previewCat, 500));
+  </script>
+</body>
+</html>

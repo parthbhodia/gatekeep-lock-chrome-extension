@@ -1,0 +1,239 @@
+/* Fat Cat Break — content styles
+   All selectors are prefixed with #fcb-overlay or .fcb- to avoid collisions. */
+
+#fcb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  transition: opacity 0.35s ease;
+}
+
+#fcb-overlay.fcb-in {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#fcb-overlay.fcb-out {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+
+.fcb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26, 18, 13, 0.04), rgba(26, 18, 13, 0.18));
+  opacity: 0;
+  animation: fcb-backdrop-in 0.7s ease forwards;
+}
+
+.fcb-cat-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: end start;
+  padding: 0 24px 0 0;
+  pointer-events: none;
+}
+
+/* ── Cat ───────────────────────────────────────────────────────────────────── */
+
+.fcb-cat-wrap {
+  position: relative;
+  width: min(52vw, 620px);
+  transform: translate(-150px, 34px);
+  transform-origin: 50% 100%;
+}
+
+.fcb-cat-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 92vh;
+  object-fit: contain;
+  filter: drop-shadow(0 34px 58px rgba(0, 0, 0, 0.2));
+  animation: fcb-cat-breathe 3s ease-in-out infinite alternate;
+}
+
+.fcb-source-video {
+  display: none;
+  width: 100%;
+  height: auto;
+  max-height: 92vh;
+  object-fit: contain;
+  filter: drop-shadow(0 34px 58px rgba(0, 0, 0, 0.2));
+  animation: fcb-cat-breathe 3s ease-in-out infinite alternate;
+}
+
+.fcb-floor-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1.5%;
+  width: 64%;
+  height: 9%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.2), rgba(0,0,0,0) 76%);
+  transform: translateX(-50%);
+  filter: blur(22px);
+}
+
+.fcb-video-fallback .fcb-cat-canvas {
+  display: none;
+}
+
+.fcb-video-fallback .fcb-cat-stage::after {
+  content: 'Cat cutout could not be created for this video.';
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  border-radius: 999px;
+  color: white;
+  background: rgba(26, 26, 46, 0.88);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@keyframes fcb-backdrop-in {
+  to { opacity: 1; }
+}
+
+@keyframes fcb-cat-breathe {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-8px) scale(1.01); }
+}
+
+/* ── Speech card ───────────────────────────────────────────────────────────── */
+
+.fcb-card {
+  background: #ffffff;
+  border-radius: 20px 20px 0 20px;
+  padding: 20px 20px 20px 22px;
+  box-shadow: 0 8px 36px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  border: 3px solid #F5A055;
+  position: fixed;
+  top: clamp(18px, 4vh, 42px);
+  left: 50%;
+  z-index: 3;
+  min-width: 230px;
+  max-width: 280px;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(28px) scale(0.94);
+  opacity: 0;
+  animation: fcb-card-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+}
+
+@keyframes fcb-card-pop {
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.fcb-timer {
+  position: fixed;
+  top: 36%;
+  left: 50%;
+  z-index: 2;
+  min-width: 280px;
+  padding: 18px 32px 22px;
+  border-radius: 30px;
+  color: white;
+  background: rgba(0, 0, 0, 0.48);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.36);
+  font: 900 clamp(72px, 13vw, 172px)/0.9 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.08em;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.58),
+    0 1px 2px rgba(0, 0, 0, 0.42);
+  transform: translate(-50%, -50%) scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+#fcb-overlay.fcb-in .fcb-timer {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ── Typography ────────────────────────────────────────────────────────────── */
+
+.fcb-title {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #1a1a2e !important;
+  margin: 0 0 8px !important;
+  line-height: 1.2 !important;
+}
+
+.fcb-body {
+  font-size: 13px !important;
+  color: #555 !important;
+  margin: 0 0 16px !important;
+  line-height: 1.5 !important;
+}
+
+.fcb-body strong {
+  color: #E07030 !important;
+  font-weight: 700 !important;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+
+.fcb-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fcb-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border: none !important;
+  transition: transform 0.1s ease, opacity 0.15s ease !important;
+  line-height: 1 !important;
+  letter-spacing: 0.01em !important;
+  box-sizing: border-box !important;
+}
+
+.fcb-btn:hover {
+  transform: scale(1.03) !important;
+}
+
+.fcb-btn:active {
+  transform: scale(0.97) !important;
+  opacity: 0.85 !important;
+}
+
+.fcb-primary {
+  background: linear-gradient(135deg, #F5A055, #FF6B35) !important;
+  color: white !important;
+  box-shadow: 0 3px 10px rgba(245,160,85,0.45) !important;
+}
+
+.fcb-snooze {
+  background: #fff4ea !important;
+  color: #E07030 !important;
+  border: 2px solid #F5A055 !important;
+}
+
+.fcb-ghost {
+  background: #f5f5f5 !important;
+  color: #999 !important;
+}

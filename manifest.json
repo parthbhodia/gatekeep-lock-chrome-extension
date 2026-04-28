@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Fat Cat Break",
+  "version": "1.0",
+  "description": "A fat cat shows up when you've been on a site too long. Time to take a break!",
+  "permissions": ["tabs", "storage", "alarms", "windows"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fat Cat Break"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4",
+        "YTDown_YouTube_cat-green-screen-No-Copyright-green-scre_Media_uzLwg85XoBM_001_1080p.mp4",
+        "snaptik_7330929514878356741_v3.mp4",
+        "snaptik_7313952845961645314_v3.mp4",
+        "snaptik_7632449998856178965_v3.mp4",
+        "snaptik_7632449998856178965_hd.mp4",
+        "Firefly A realistic full-body orange tabby cat, side profile, walking naturally from left to right a.mp4",
+        "cat-video.mp4",
+        "preview-cat-sit.mp4"
+      ],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ]
+}
