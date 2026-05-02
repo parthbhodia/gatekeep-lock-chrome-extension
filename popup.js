@@ -31,6 +31,7 @@ async function load() {
   render();
   bindEvents();
   refreshShooCatState();
+  initReviewBanner();
 }
 
 function enforceKnownVideo() {
@@ -343,6 +344,19 @@ function fmtMs(ms) {
 
 function cleanDomain(raw) {
   return raw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+}
+
+function initReviewBanner() {
+  if (localStorage.getItem('cat_break_review_dismissed')) return;
+  const banner = document.getElementById('review-banner');
+  if (!banner) return;
+  banner.classList.add('is-visible');
+  document.getElementById('review-link').href =
+    `https://chromewebstore.google.com/detail/${chrome.runtime.id}/reviews`;
+  document.getElementById('review-dismiss').addEventListener('click', () => {
+    localStorage.setItem('cat_break_review_dismissed', '1');
+    banner.classList.remove('is-visible');
+  });
 }
 
 load();

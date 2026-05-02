@@ -447,3 +447,46 @@ body {
   font-size: 11px;
   color: #7d8198;
 }
+
+.review-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff4ee, #f0ebff);
+  border: 1px solid #ffd4b8;
+  font-size: 12px;
+  color: #3a3d52;
+}
+
+.review-banner.is-visible {
+  display: flex;
+}
+
+.review-link {
+  margin-left: auto;
+  color: #ff6b4a;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.review-link:hover {
+  text-decoration: underline;
+}
+
+.review-dismiss {
+  border: none;
+  background: transparent;
+  color: #b4b7cb;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  line-height: 1;
+}
+
+.review-dismiss:hover {
+  color: #6f7287;
+}
