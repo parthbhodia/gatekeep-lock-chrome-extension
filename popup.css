@@ -448,6 +448,26 @@ body {
   color: #7d8198;
 }
 
+.exclude-current-btn {
+  width: 100%;
+  margin-top: 8px;
+  border: 1.5px dashed #c8cbe0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: transparent;
+  color: #5a5f7a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.exclude-current-btn:hover {
+  border-color: #2f995f;
+  color: #2f995f;
+  background: #f0fff7;
+}
+
 .review-banner {
   display: none;
   align-items: center;

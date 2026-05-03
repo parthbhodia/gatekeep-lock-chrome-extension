@@ -20,6 +20,7 @@ async function init() {
       settings: {
         defaultLimit: 30 * 60 * 1000, // 30 minutes
         siteLimits: {},
+        excludedSites: [],
         enabled: true,
         catLingerMinutes: 2,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE
@@ -173,6 +174,7 @@ async function checkAndNotify() {
   ]);
 
   if (!settings.enabled) return;
+  if ((settings.excludedSites || []).includes(domain)) return;
 
   const timeSpent = siteTime[domain] || 0;
   const limit = getDomainLimit(domain, settings);
