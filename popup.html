@@ -47,6 +47,12 @@
       </div>
 
       <div class="section">
+        <span class="label">Excluded sites</span>
+        <div id="excluded-sites" class="site-limits"></div>
+        <button id="exclude-current-btn" class="exclude-current-btn">＋ Exclude current site</button>
+      </div>
+
+      <div class="section">
         <span class="label">Quick action</span>
         <button id="shoo-cat-btn-settings" class="shoo-cat-btn is-hidden">Shoo cat away</button>
       </div>
@@ -84,6 +90,11 @@
         <p id="preview-msg" class="preview-msg"></p>
       </div>
     </section>
+    <div class="review-banner" id="review-banner">
+      <span>🐾 Enjoying Cat Break?</span>
+      <a id="review-link" class="review-link" target="_blank" rel="noopener">Leave a review ★</a>
+      <button class="review-dismiss" id="review-dismiss" title="Dismiss">✕</button>
+    </div>
   </div>
   <script src="popup.js"></script>
 </body>

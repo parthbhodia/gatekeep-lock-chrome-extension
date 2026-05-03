@@ -11,6 +11,7 @@ const CAT_VIDEOS = [
 let settings = {
   defaultLimit: 30 * 60 * 1000,
   siteLimits: {},
+  excludedSites: [],
   enabled: true,
   catLingerMinutes: 2,
   catVideoFile: DEFAULT_VIDEO_FILE
@@ -31,6 +32,7 @@ async function load() {
   render();
   bindEvents();
   refreshShooCatState();
+  initReviewBanner();
 }
 
 function enforceKnownVideo() {
@@ -48,6 +50,7 @@ function render() {
   renderCatLingerChips();
   renderStats();
   renderSiteLimits();
+  renderExcludedSites();
   renderVideoGrid();
 }
 
@@ -142,6 +145,54 @@ function renderSiteLimits() {
   });
 }
 
+function renderExcludedSites() {
+  const el = document.getElementById('excluded-sites');
+  const sites = settings.excludedSites || [];
+
+  if (sites.length === 0) {
+    el.innerHTML = '<div class="empty">No sites excluded</div>';
+    return;
+  }
+
+  el.innerHTML = sites.map((domain) => `
+    <div class="site-item">
+      <span class="site-item-domain" title="${domain}">${domain}</span>
+      <span class="site-item-limit" style="color:#2f995f">Excluded</span>
+      <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
+    </div>`).join('');
+
+  el.querySelectorAll('.site-item-rm').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      settings.excludedSites = (settings.excludedSites || []).filter((d) => d !== btn.dataset.d);
+      renderExcludedSites();
+      queueSave();
+    });
+  });
+}
+
+async function excludeCurrentSite() {
+  const btn = document.getElementById('exclude-current-btn');
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.url || !/^https?:\/\//.test(tab.url)) {
+      btn.textContent = 'No active site found';
+      setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
+      return;
+    }
+    const domain = new URL(tab.url).hostname;
+    if (!(settings.excludedSites || []).includes(domain)) {
+      settings.excludedSites = [...(settings.excludedSites || []), domain];
+      renderExcludedSites();
+      queueSave();
+    }
+    btn.textContent = `✓ ${domain} excluded`;
+    setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
+  } catch {
+    btn.textContent = 'Could not detect site';
+    setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
+  }
+}
+
 function renderVideoGrid() {
   const grid = document.getElementById('cat-video-grid');
   grid.innerHTML = CAT_VIDEOS.map((video) => {
@@ -209,6 +260,7 @@ function bindEvents() {
     queueSave();
   });
 
+  document.getElementById('exclude-current-btn').addEventListener('click', excludeCurrentSite);
   document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
   document.getElementById('shoo-cat-btn').addEventListener('click', shooCatAway);
   document.getElementById('shoo-cat-btn-settings').addEventListener('click', shooCatAway);
@@ -343,6 +395,19 @@ function fmtMs(ms) {
 
 function cleanDomain(raw) {
   return raw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+}
+
+function initReviewBanner() {
+  if (localStorage.getItem('cat_break_review_dismissed')) return;
+  const banner = document.getElementById('review-banner');
+  if (!banner) return;
+  banner.classList.add('is-visible');
+  document.getElementById('review-link').href =
+    `https://chromewebstore.google.com/detail/${chrome.runtime.id}/reviews`;
+  document.getElementById('review-dismiss').addEventListener('click', () => {
+    localStorage.setItem('cat_break_review_dismissed', '1');
+    banner.classList.remove('is-visible');
+  });
 }
 
 load();
