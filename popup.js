@@ -72,6 +72,7 @@ function renderDefaultLimitChips() {
       document.getElementById('default-limit').value = value;
       renderDefaultLimitChips();
       queueSave();
+      showToast(`Default limit set to ${value}m`, 'success');
     }
   );
 }
