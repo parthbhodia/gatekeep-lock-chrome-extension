@@ -26,4 +26,4 @@ Last updated: 2026-04-28
 - All scripts and media assets are bundled with the extension; no remote code is fetched.
 
 ## Contact
-Questions or issues? Email `zokuzoku.app@gmail.com` with the subject "Cat Gatekeeper".
+Questions or issues? Email `parthbhodia08@gmail.com` with the subject "Cat Break".

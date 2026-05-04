@@ -21,6 +21,7 @@
 
     <div class="tabs" role="tablist" aria-label="Popup sections">
       <button class="tab-btn is-active" data-tab="settings" role="tab" type="button">Settings</button>
+      <button class="tab-btn" data-tab="today" role="tab" type="button">Stats</button>
       <button class="tab-btn" data-tab="cat" role="tab" type="button">Cat</button>
     </div>
 
@@ -28,17 +29,18 @@
 
     <section class="tab-panel is-active" data-panel="settings">
       <div class="section">
-        <span class="label">Default time limit</span>
+        <span class="label">Default time limit <span class="info" title="Applies when no site-specific limit is set."></span></span>
         <div class="chip-row" id="default-limit-chips"></div>
         <div class="custom-row">
-          <input type="number" id="default-limit" min="1" max="600" class="num-input">
+          <input type="number" id="default-limit" placeholder="min" min="1" max="600" class="num-input">
           <span class="unit">minutes (custom)</span>
         </div>
       </div>
 
       <div class="section">
-        <span class="label">Per-site limits</span>
+        <span class="label">Limit by site <span class="info" title="Overrides the default for specific sites."></span></span>
         <div id="site-limits" class="site-limits"></div>
+        <div class="chip-row" id="per-site-chips"></div>
         <div class="add-row">
           <input type="text" id="add-domain" placeholder="youtube.com" class="site-input">
           <input type="number" id="add-limit" placeholder="min" min="1" max="600" class="min-input">
@@ -47,12 +49,15 @@
       </div>
 
       <div class="section">
-        <span class="label">Excluded sites</span>
+        <span class="label">Excluded sites <span class="info" title="These sites are not tracked or blocked."></span></span>
         <div id="excluded-sites" class="site-limits"></div>
-        <button id="exclude-current-btn" class="exclude-current-btn">＋ Exclude current site</button>
+        <div class="add-row">
+          <input type="text" id="exclude-domain" placeholder="example.com" class="site-input">
+          <button id="exclude-add-btn" class="add-btn">Exclude</button>
+        </div>
       </div>
 
-      <div class="section">
+      <div class="section is-hidden" id="quick-action-section">
         <span class="label">Quick action</span>
         <button id="shoo-cat-btn-settings" class="shoo-cat-btn is-hidden">Shoo cat away</button>
       </div>
@@ -60,7 +65,10 @@
 
     <section class="tab-panel" data-panel="today">
       <div class="section">
-        <span class="label">Today's usage</span>
+        <div class="section-header">
+          <span class="label">Today's usage</span>
+          <button id="reset-all-btn" class="reset-btn" type="button">Reset today</button>
+        </div>
         <div id="stats-list" class="stats-list">
           <div class="empty">Loading...</div>
         </div>
@@ -69,7 +77,7 @@
 
     <section class="tab-panel" data-panel="cat">
       <div class="section">
-        <span class="label">Cat linger duration</span>
+        <span class="label">Cat linger duration <span class="info" title="How long the overlay stays before auto-dismiss."></span></span>
         <div class="chip-row" id="cat-linger-chips"></div>
         <div class="custom-row">
           <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
@@ -96,6 +104,7 @@
       <button class="review-dismiss" id="review-dismiss" title="Dismiss">✕</button>
     </div>
   </div>
+  <div id="toast" class="toast" aria-live="polite"></div>
   <script src="popup.js"></script>
 </body>
 </html>

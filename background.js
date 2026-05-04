@@ -29,12 +29,15 @@ async function init() {
       lastReset: new Date().toDateString(),
       snoozed: {}
     });
-  } else if (settings.catLingerMinutes == null || settings.catVideoFile == null) {
+  } else {
+    // Always merge defaults so any newly-added settings field is present for
+    // existing users without needing per-field migration guards.
     await chrome.storage.local.set({
       settings: {
-        ...settings,
-        catLingerMinutes: settings.catLingerMinutes ?? 2,
-        catVideoFile: settings.catVideoFile ?? DEFAULT_CAT_VIDEO_FILE
+        defaultLimit: 30 * 60 * 1000,
+        catLingerMinutes: 2,
+        catVideoFile: DEFAULT_CAT_VIDEO_FILE,
+        ...settings
       }
     });
   }
@@ -139,19 +142,34 @@ async function flush() {
     if (!restored) return;
   }
 
+  // Re-read activeDomain after a potential context restore to avoid attributing
+  // time to a stale domain.
   const domain = activeDomain || await getActiveDomain();
   if (!domain) return;
+  if (!segmentStart) return;
 
   const elapsed = Date.now() - segmentStart;
   segmentStart = Date.now();
   await persistTrackingState();
 
-  const { siteTime = {}, lastReset } = await chrome.storage.local.get(['siteTime', 'lastReset']);
+  const { siteTime = {}, lastReset, settings = {} } = await chrome.storage.local.get([
+    'siteTime',
+    'lastReset',
+    'settings'
+  ]);
 
   // Daily reset
   const today = new Date().toDateString();
   if (lastReset !== today) {
     await chrome.storage.local.set({ siteTime: {}, snoozed: {}, lastReset: today });
+    segmentStart = Date.now();
+    return;
+  }
+
+  // Skip tracking excluded sites entirely
+  if (isExcludedDomain(domain, settings.excludedSites)) {
+    segmentStart = Date.now();
+    await persistTrackingState();
     return;
   }
 
@@ -174,7 +192,7 @@ async function checkAndNotify() {
   ]);
 
   if (!settings.enabled) return;
-  if ((settings.excludedSites || []).includes(domain)) return;
+  if (isExcludedDomain(domain, settings.excludedSites)) return;
 
   const timeSpent = siteTime[domain] || 0;
   const limit = getDomainLimit(domain, settings);
@@ -209,12 +227,30 @@ async function checkAndNotify() {
 function getDomainLimit(domain, settings) {
   const siteLimits = settings.siteLimits || {};
   if (domain in siteLimits) return siteLimits[domain];
+  const alt = `www.${domain}`;
+  if (alt in siteLimits) return siteLimits[alt];
   return settings.defaultLimit ?? 30 * 60 * 1000;
 }
 
 function getCatLingerMs(settings) {
   const minutes = Number(settings.catLingerMinutes ?? 2);
   return Math.max(0.1, Number.isFinite(minutes) ? minutes : 2) * 60 * 1000;
+}
+
+function normalizeDomain(domain) {
+  if (!domain) return null;
+  return domain.replace(/^www\./i, '').toLowerCase();
+}
+
+function normalizeDomainsList(list) {
+  return (list || [])
+    .map((d) => normalizeDomain(d))
+    .filter(Boolean);
+}
+
+function isExcludedDomain(domain, excludedList) {
+  const normalized = normalizeDomainsList(excludedList);
+  return normalized.some((ex) => domain === ex || domain.endsWith(`.${ex}`));
 }
 
 async function getActiveDomain() {
@@ -282,7 +318,7 @@ function extractDomainFromUrl(urlValue) {
     const url = new URL(urlValue);
     if (url.protocol === 'chrome:' || url.protocol === 'about:' || url.protocol === 'chrome-extension:') return null;
     if (!/^https?:$/.test(url.protocol)) return null;
-    return url.hostname;
+    return normalizeDomain(url.hostname);
   } catch {
     return null;
   }
@@ -350,17 +386,35 @@ async function handleMessage(msg) {
       return { ok: true };
     }
     case 'RESET_SITE': {
-      const { siteTime = {} } = await chrome.storage.local.get('siteTime');
+      const { siteTime = {} } = await chrome.storage.local.get(['siteTime']);
       delete siteTime[msg.domain];
       await chrome.storage.local.set({ siteTime });
+      return { ok: true };
+    }
+    case 'RESET_ALL': {
+      await chrome.storage.local.set({ siteTime: {}, snoozed: {}, lastReset: new Date().toDateString() });
       return { ok: true };
     }
     case 'GET_STATS': {
       return chrome.storage.local.get(['siteTime', 'settings', 'snoozed', 'lastReset']);
     }
     case 'SAVE_SETTINGS': {
+      const normalizedSiteLimits = {};
+      Object.entries(msg.settings.siteLimits || {}).forEach(([domain, limit]) => {
+        const norm = normalizeDomain(domain);
+        if (norm) normalizedSiteLimits[norm] = limit;
+      });
+      const normalizedExcluded = normalizeDomainsList(msg.settings.excludedSites);
+      const dedupExcluded = Array.from(new Set(normalizedExcluded));
+
+      const nextSettings = {
+        ...msg.settings,
+        siteLimits: normalizedSiteLimits,
+        excludedSites: dedupExcluded
+      };
+
       // Clear snoozed gates so new limits/settings apply immediately.
-      await chrome.storage.local.set({ settings: msg.settings, snoozed: {} });
+      await chrome.storage.local.set({ settings: nextSettings, snoozed: {} });
       return { ok: true };
     }
     default:

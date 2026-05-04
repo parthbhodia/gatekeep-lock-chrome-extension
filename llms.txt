@@ -1,0 +1,50 @@
+# Cat Break
+
+> A free Chrome extension that limits time on websites by showing a cat video overlay when your limit is exceeded.
+
+## What it is
+
+Cat Break is a screen-time management Chrome extension for people who want to spend less time on social media and distracting websites. When a user exceeds their configured time limit on a site, a cat video plays as a full-screen overlay — hard to ignore, but not punishing.
+
+- Free, no account required, no ads
+- Available on the Chrome Web Store
+- All data is local (chrome.storage); nothing is transmitted externally
+
+## Who it's for
+
+- People who lose track of time on YouTube, Instagram, TikTok, X (Twitter), or Reddit
+- Anyone who wants a passive, low-friction screen-time nudge without hard blocking
+- Users who find notification-based tools too easy to dismiss
+
+## How it works
+
+1. User sets a default time limit (e.g., 30 minutes) for all sites
+2. Optionally sets per-site overrides (e.g., youtube.com → 15 minutes)
+3. Cat Break tracks active tab time — only while the tab is focused
+4. When the limit is hit, a cat video appears on the page
+5. The overlay auto-dismisses after a configurable linger time (default: 2 minutes)
+6. Daily totals reset at midnight
+
+## Key features
+
+- Default time limit (applies to all sites)
+- Per-site limit overrides
+- Excluded sites list (never tracked)
+- Cat linger duration setting
+- Choice of 4 cat videos
+- Daily usage stats per site
+- Privacy-first: zero data collection
+
+## Links
+
+- Chrome Web Store: https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh
+- Privacy policy: https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md
+- Source code: https://github.com/parthbhodia/gatekeep-lock-chrome-extension
+
+## Pricing
+
+Free. No tiers, no subscription, no ads.
+
+## Contact
+
+parthbhodia08@gmail.com (subject: "Cat Break")

@@ -1,5 +1,5 @@
 const DEFAULT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
-const DEFAULT_LIMIT_CHIPS = [15, 30, 45, 60, 90, 120];
+const LIMIT_CHIPS = [15, 30, 45, 60, 90, 120];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5, 10];
 const CAT_VIDEOS = [
   { file: 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4', label: 'Sad Cat' },
@@ -19,6 +19,9 @@ let settings = {
 let siteTime = {};
 let saveTimeout = null;
 let isSaving = false;
+let toastTimer = null;
+let defaultLimitToastTimer = null;
+let catLingerToastTimer = null;
 
 async function load() {
   try {
@@ -49,16 +52,20 @@ function render() {
   renderDefaultLimitChips();
   renderCatLingerChips();
   renderStats();
+  renderPerSiteChips();
   renderSiteLimits();
   renderExcludedSites();
   renderVideoGrid();
 }
 
 function renderDefaultLimitChips() {
+  const container = document.getElementById('default-limit-chips');
+  const activeVal = Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000));
+
   renderChips(
-    document.getElementById('default-limit-chips'),
-    DEFAULT_LIMIT_CHIPS,
-    Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000)),
+    container,
+    LIMIT_CHIPS,
+    activeVal,
     'm',
     (value) => {
       settings.defaultLimit = value * 60 * 1000;
@@ -101,9 +108,11 @@ function renderStats() {
 
   if (entries.length === 0) {
     el.innerHTML = '<div class="empty">No activity recorded today</div>';
+    el.classList.remove('is-scrollable');
     return;
   }
 
+  el.classList.toggle('is-scrollable', entries.length > 5);
   const maxMs = entries[0][1];
   el.innerHTML = entries.map(([domain, ms]) => {
     const limit = getDomainLimitMs(domain);
@@ -122,10 +131,29 @@ function renderStats() {
 
 function renderSiteLimits() {
   const el = document.getElementById('site-limits');
-  const entries = Object.entries(settings.siteLimits || {});
+  const excluded = (settings.excludedSites || []).map(cleanDomain).filter(Boolean);
+
+  // Build display entries without mutating settings.siteLimits — only clean up
+  // orphaned entries that have an empty key.
+  const entries = [];
+  const cleanedLimits = {};
+
+  Object.entries(settings.siteLimits || {}).forEach(([domain, ms]) => {
+    const d = cleanDomain(domain);
+    if (!d) return; // drop entries with unresolvable keys
+    const isExcluded = excluded.some((ex) => d === ex || d.endsWith(`.${ex}`));
+    if (isExcluded) return; // skip excluded, but don't delete — exclusion handles that
+    cleanedLimits[d] = ms;
+    entries.push([d, ms]);
+  });
+
+  // Only update settings if keys were actually normalised (e.g. www. stripped).
+  if (Object.keys(cleanedLimits).join() !== Object.keys(settings.siteLimits || {}).join()) {
+    settings.siteLimits = cleanedLimits;
+  }
 
   if (entries.length === 0) {
-    el.innerHTML = '<div class="empty">No per-site limits set</div>';
+    el.innerHTML = '<div class="empty">No site limits set</div>';
     return;
   }
 
@@ -140,6 +168,7 @@ function renderSiteLimits() {
     btn.addEventListener('click', () => {
       delete settings.siteLimits[btn.dataset.d];
       renderSiteLimits();
+      showToast(`Removed ${btn.dataset.d}`, 'info');
       queueSave();
     });
   });
@@ -165,32 +194,50 @@ function renderExcludedSites() {
     btn.addEventListener('click', () => {
       settings.excludedSites = (settings.excludedSites || []).filter((d) => d !== btn.dataset.d);
       renderExcludedSites();
+      showToast(`Removed ${btn.dataset.d}`, 'info');
       queueSave();
     });
   });
 }
 
-async function excludeCurrentSite() {
-  const btn = document.getElementById('exclude-current-btn');
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.url || !/^https?:\/\//.test(tab.url)) {
-      btn.textContent = 'No active site found';
-      setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
-      return;
-    }
-    const domain = new URL(tab.url).hostname;
-    if (!(settings.excludedSites || []).includes(domain)) {
-      settings.excludedSites = [...(settings.excludedSites || []), domain];
-      renderExcludedSites();
-      queueSave();
-    }
-    btn.textContent = `✓ ${domain} excluded`;
-    setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
-  } catch {
-    btn.textContent = 'Could not detect site';
-    setTimeout(() => { btn.textContent = '＋ Exclude current site'; }, 2000);
-  }
+function renderPerSiteChips() {
+  const row = document.getElementById('per-site-chips');
+  if (!row) return;
+  const current = Number(document.getElementById('add-limit').value) || 0;
+  row.innerHTML = LIMIT_CHIPS.map((value) => {
+    const isActive = Math.abs(current - value) < 0.001;
+    return `<button type="button" class="chip ${isActive ? 'is-active' : ''}" data-value="${value}">${value}m</button>`;
+  }).join('');
+  row.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.getElementById('add-limit').value = Number(chip.dataset.value);
+      renderPerSiteChips();
+    });
+  });
+}
+
+function addExcludedDomainFromInput() {
+  const input = document.getElementById('exclude-domain');
+  if (!input) return;
+  const rawDomain = input.value;
+  const domain = cleanDomain(rawDomain);
+  if (!rawDomain.trim()) { showToast('Enter a valid site name to exclude (e.g., youtube.com)', 'error'); return; }
+  if (!domain) { showToast('Enter a valid site name to exclude (e.g., youtube.com)', 'error'); return; }
+  const nextExcluded = (settings.excludedSites || []).filter((d) => !domainsMatch(d, domain));
+  nextExcluded.push(domain);
+  settings.excludedSites = nextExcluded;
+  const hadSiteLimit = Object.keys(settings.siteLimits || {}).some((d) => domainsMatch(d, domain));
+  removeMatchingSiteLimits(domain);
+  renderExcludedSites();
+  renderSiteLimits();
+  queueSave();
+  // Clear any existing time for this domain so exclusion takes effect immediately
+  chrome.runtime.sendMessage({ type: 'RESET_SITE', domain }).catch(() => {});
+  showToast(
+    `Excluded ${domain}${hadSiteLimit ? ' and removed its site limit' : ''}`,
+    'success'
+  );
+  input.value = '';
 }
 
 function renderVideoGrid() {
@@ -234,10 +281,20 @@ function bindEvents() {
   });
 
   document.getElementById('default-limit').addEventListener('input', (e) => {
-    const value = Math.max(1, parseInt(e.target.value, 10) || 1);
-    settings.defaultLimit = value * 60 * 1000;
+    const mins = parseInt(e.target.value, 10);
+    clearTimeout(defaultLimitToastTimer);
+    if (Number.isNaN(mins) || mins < 1) {
+      defaultLimitToastTimer = setTimeout(() => {
+        showToast('Enter minutes (>=1)', 'error');
+        // Restore input to the last saved valid value so state stays consistent.
+        e.target.value = Math.max(1, Math.round((settings.defaultLimit || 30 * 60 * 1000) / 60000));
+      }, 700);
+      return;
+    }
+    settings.defaultLimit = mins * 60 * 1000;
     renderDefaultLimitChips();
     queueSave();
+    defaultLimitToastTimer = setTimeout(() => showToast(`Default limit set to ${mins}m`, 'success'), 700);
   });
 
   document.getElementById('cat-linger').addEventListener('input', (e) => {
@@ -245,22 +302,58 @@ function bindEvents() {
     settings.catLingerMinutes = Math.max(0.1, Number.isFinite(value) ? value : 2);
     renderCatLingerChips();
     queueSave();
+    clearTimeout(catLingerToastTimer);
+    catLingerToastTimer = setTimeout(() => showToast(`Cat linger set to ${settings.catLingerMinutes}m`, 'success'), 700);
   });
 
   document.getElementById('add-btn').addEventListener('click', () => {
-    const domain = cleanDomain(document.getElementById('add-domain').value);
+    const rawDomain = document.getElementById('add-domain').value;
+    const domain = cleanDomain(rawDomain);
     const mins = parseInt(document.getElementById('add-limit').value, 10);
-    if (!domain || Number.isNaN(mins) || mins < 1) return;
+    if (!rawDomain.trim()) { showToast('Enter a valid site name (e.g., youtube.com)', 'error'); return; }
+    if (!domain) { showToast('Enter a valid site name (e.g., youtube.com)', 'error'); return; }
+    if (Number.isNaN(mins) || mins < 1) { showToast('Enter minutes (>=1)', 'error'); return; }
+    if ((settings.excludedSites || []).some((d) => domainsMatch(d, domain))) {
+      showToast('This site is excluded. Remove it from Excluded first.', 'error');
+      return;
+    }
 
     if (!settings.siteLimits) settings.siteLimits = {};
+    // Remove matching site limits variants
+    removeMatchingSiteLimits(domain);
     settings.siteLimits[domain] = mins * 60 * 1000;
     document.getElementById('add-domain').value = '';
     document.getElementById('add-limit').value = '';
     renderSiteLimits();
+    showToast(`Added ${domain} (${mins}m)`, 'success');
     queueSave();
   });
 
-  document.getElementById('exclude-current-btn').addEventListener('click', excludeCurrentSite);
+  document.getElementById('add-domain').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('add-btn').click();
+    }
+  });
+  document.getElementById('add-limit').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('add-btn').click();
+    }
+  });
+  document.getElementById('add-limit').addEventListener('input', () => renderPerSiteChips());
+
+  document.getElementById('exclude-add-btn').addEventListener('click', () => {
+    addExcludedDomainFromInput();
+  });
+  document.getElementById('exclude-domain').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addExcludedDomainFromInput();
+    }
+  });
+
+  document.getElementById('reset-all-btn').addEventListener('click', resetAllStats);
   document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
   document.getElementById('shoo-cat-btn').addEventListener('click', shooCatAway);
   document.getElementById('shoo-cat-btn-settings').addEventListener('click', shooCatAway);
@@ -308,11 +401,52 @@ async function saveSettings() {
   }
 }
 
-function setSaveStatus(text, stateClass) {
-  const indicator = document.getElementById('save-indicator');
-  indicator.textContent = text;
-  indicator.classList.remove('is-saving', 'is-saved');
-  if (stateClass) indicator.classList.add(stateClass);
+function setSaveStatus(_text, _stateClass) {
+  // Save indicator is intentionally hidden; saves confirmed via toast.
+}
+
+function showToast(text, variant = 'info') {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = text;
+  el.className = `toast ${variant} is-visible`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('is-visible');
+  }, 1800);
+}
+
+function domainsMatch(a, b) {
+  const ca = cleanDomain(a);
+  const cb = cleanDomain(b);
+  if (!ca || !cb) return false;
+  return (
+    ca === cb ||
+    ca === `www.${cb}` ||
+    cb === `www.${ca}` ||
+    ca.endsWith(`.${cb}`) ||
+    cb.endsWith(`.${ca}`)
+  );
+}
+
+function removeMatchingSiteLimits(target) {
+  const cleaned = {};
+  Object.entries(settings.siteLimits || {}).forEach(([d, v]) => {
+    if (!domainsMatch(d, target)) cleaned[d] = v;
+  });
+  settings.siteLimits = cleaned;
+}
+
+async function resetAllStats() {
+  try {
+    await chrome.runtime.sendMessage({ type: 'RESET_ALL' });
+    const data = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
+    if (data?.siteTime) siteTime = data.siteTime;
+    renderStats();
+    showToast('Stats reset for today', 'info');
+  } catch {
+    showToast('Reset failed', 'error');
+  }
 }
 
 async function previewCatNow() {
@@ -324,6 +458,7 @@ async function previewCatNow() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
       msg.textContent = 'Open a normal website tab first.';
+      showToast('Open a site tab first', 'error');
       return;
     }
 
@@ -338,9 +473,11 @@ async function previewCatNow() {
       force: true
     });
     msg.textContent = 'Cat sent to this tab.';
+    showToast('Cat sent to this tab', 'success');
     setTimeout(refreshShooCatState, 400);
   } catch {
     msg.textContent = 'Reload this page, then try again.';
+    showToast('Reload this page, then try again', 'error');
   }
 }
 
@@ -351,16 +488,20 @@ async function shooCatAway() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
       msg.textContent = 'Open a normal website tab first.';
+      showToast('Open a site tab first', 'error');
       return;
     }
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'SHOO_CAT' });
     if (response?.dismissed) {
       msg.textContent = 'Cat shooed away.';
+      showToast('Cat shooed away', 'success');
     } else {
       msg.textContent = 'No active cat on this tab.';
+      showToast('No active cat on this tab', 'info');
     }
   } catch {
     msg.textContent = 'Reload this page, then try again.';
+    showToast('Reload this page, then try again', 'error');
   } finally {
     refreshShooCatState();
   }
@@ -369,16 +510,22 @@ async function shooCatAway() {
 async function refreshShooCatState() {
   const buttons = [...document.querySelectorAll('.shoo-cat-btn')];
   if (buttons.length === 0) return;
+  const quickSection = document.getElementById('quick-action-section');
+  // Hide by default; show only when active cat exists
+  buttons.forEach((button) => button.classList.add('is-hidden'));
+  if (quickSection) quickSection.classList.add('is-hidden');
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
-      buttons.forEach((button) => button.classList.add('is-hidden'));
       return;
     }
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CAT_STATE' });
-    buttons.forEach((button) => button.classList.toggle('is-hidden', !response?.active));
+    if (response?.active) {
+      buttons.forEach((button) => button.classList.remove('is-hidden'));
+      if (quickSection) quickSection.classList.remove('is-hidden');
+    }
   } catch {
-    buttons.forEach((button) => button.classList.add('is-hidden'));
+    // keep hidden on errors
   }
 }
 
@@ -393,8 +540,19 @@ function fmtMs(ms) {
   return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 }
 
+function isValidDomain(raw) {
+  const trimmed = raw.trim().toLowerCase();
+  const withoutProto = trimmed.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  const domain = withoutProto.replace(/\/.*$/, '');
+  const domainRegex = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/; // requires at least one dot and valid labels
+  return domainRegex.test(domain);
+}
+
 function cleanDomain(raw) {
-  return raw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+  const trimmed = raw.trim().toLowerCase();
+  const withoutProto = trimmed.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  const domain = withoutProto.replace(/\/.*$/, '');
+  return isValidDomain(domain) ? domain : '';
 }
 
 function initReviewBanner() {
@@ -403,7 +561,7 @@ function initReviewBanner() {
   if (!banner) return;
   banner.classList.add('is-visible');
   document.getElementById('review-link').href =
-    `https://chromewebstore.google.com/detail/${chrome.runtime.id}/reviews`;
+    'https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh/reviews';
   document.getElementById('review-dismiss').addEventListener('click', () => {
     localStorage.setItem('cat_break_review_dismissed', '1');
     banner.classList.remove('is-visible');
