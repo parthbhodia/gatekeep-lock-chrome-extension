@@ -11,38 +11,129 @@ let catShownAt = 0;
 let hideTimer = null;
 let countdownTimer = null;
 let drawFrameId = null;
+let lastDrawTime = 0;
+const DRAW_INTERVAL_MS = 50; // ~20 fps — keeps pixel workload manageable
 let dialogHideTimer = null;
 let pausedVideos = [];
+let tabMuteAppliedByUs = false;
 let keydownHandler = null;
 const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
 const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
+const BRIDAL_TIPS_VIDEO_FILE =
+  'assets/From KlickPin CF Love these elegant bridal look tips to make your next project easier and prettier with practical inspiration you can use right away and create a - Pin-934356253930197107.mp4';
+const STREET_STRUT_VIDEO_FILE = 'assets/b03803a60a90e705c3ac00e33bdb3500_t4.mp4';
+
+/** Picked at random each time the break overlay opens. */
+const BREAK_MEOW_QUOTES = [
+  'Meow — your scroll paw needs a rest.',
+  'Gentle head-bonk: that is enough pixels for now.',
+  'This cat says stretch, hydrate, and blink away from the tab.',
+  "Purr-haps it is time to stand up and meander?",
+  'The internet will still be here in a few minutes.',
+  'Mrrp. Something besides this screen misses you.',
+  'Even curiosity needed a nap. You are next.',
+  'Champion of focus — now try champion of breathing room.',
+  'Soft meow, loud hint: break time.',
+  'Treat yourself to real sky, not just the loading kind.',
+  'Boop. Your human eyes deserve a different focal length.',
+  'The tab can wait; your spine cannot. Meow.',
+  'One polite paw on the keyboard means: pause.',
+  'Whiskers sense you have earned a stretch intermission.',
+  'This is not goodbye to the site — just a tiny cat ceasefire.',
+  'Keyboard warmth is lovely; fresh air is lovelier. Mrr.',
+  'Your thumbs did great. Now let them loaf.',
+  'Nine lives, one back — stand up like you mean it.',
+  'Fur real: a two-minute wander beats a doom-scroll spiral.',
+  'Tail says sideways — that means take five, friend.'
+];
+
 const ALLOWED_CAT_VIDEO_FILES = new Set([
   'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4',
   'snaptik_7330929514878356741_v3.mp4',
   'snaptik_7313952845961645314_v3.mp4',
-  'snaptik_7632449998856178965_v3.mp4'
+  'snaptik_7632449998856178965_v3.mp4',
+  'assets/From KlickPin CF Explore Budget-friendly journaling prompts that feel fresh practical and surprisingly easy to try for your next Pinterest save - Pin-1009861916434987310.mp4',
+  BRIDAL_TIPS_VIDEO_FILE,
+  'assets/From KlickPin CF Rustic Wedding Bouquet Ideas for 2026 - Pin-650981321193891957.mp4',
+  'assets/1fba07daca9d581992897b2cd098519a.mp4',
+  'assets/46a19be0b5bfdab4ca631bff5c4c59de_720w.mp4',
+  'assets/6b3a5a231ba53006350a2cf77c037c57_720w.mp4',
+  'assets/a98487b2ff946c18877c93fd2a3cfc63_720w.mp4',
+  STREET_STRUT_VIDEO_FILE,
+  'assets/b2e0f2aa5d97ac9b310f4891fa21120a_720w.mp4'
 ]);
+
+function isExtensionContextValid() {
+  try {
+    return Boolean(chrome.runtime?.id);
+  } catch {
+    return false;
+  }
+}
+
+/** Avoid "Extension context invalidated" when the extension reloads while this tab still runs a stale content script. */
+function safeSendRuntimeMessage(message) {
+  try {
+    if (!isExtensionContextValid()) return;
+    const p = chrome.runtime.sendMessage(message);
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch {
+    /* Context gone — dismiss UI still runs; background reset is best-effort only. */
+  }
+}
+
+function sendRuntimeMessageAsync(message) {
+  return new Promise((resolve) => {
+    try {
+      if (!isExtensionContextValid()) {
+        resolve(null);
+        return;
+      }
+      chrome.runtime.sendMessage(message, (res) => {
+        if (chrome.runtime.lastError) resolve(null);
+        else resolve(res);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function safeSendResponse(sendResponse, data) {
+  try {
+    sendResponse(data);
+  } catch {
+    /* Message port closed or context invalidated */
+  }
+}
+
+function isStreetStrutVideo(videoFile) {
+  return (
+    typeof videoFile === 'string' &&
+    (videoFile === STREET_STRUT_VIDEO_FILE || videoFile.includes('b03803a60a90e705c3ac00e33bdb3500'))
+  );
+}
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'FCB_PING') {
-    sendResponse({ ok: true });
+    safeSendResponse(sendResponse, { ok: true });
     return;
   }
 
   if (msg.type === 'GET_CAT_STATE') {
-    sendResponse({ active: Boolean(catOverlay) });
+    safeSendResponse(sendResponse, { active: Boolean(catOverlay) });
     return;
   }
 
   if (msg.type === 'SHOO_CAT') {
     if (catOverlay) {
-      dismissWithOptions({ resetSite: true, resumePaused: false });
-      sendResponse({ ok: true, dismissed: true });
+      dismissWithOptions({ resetSite: true, resumePaused: true });
+      safeSendResponse(sendResponse, { ok: true, dismissed: true });
       return;
     }
-    sendResponse({ ok: true, dismissed: false });
+    safeSendResponse(sendResponse, { ok: true, dismissed: false });
     return;
   }
 
@@ -55,11 +146,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE) {
   currentDomain = domain;
   catShownAt = Date.now();
+  tabMuteAppliedByUs = false;
   pauseVisibleVideos();
+  if (isYoutubeLikeHost() && pausedVideos.length === 0) {
+    const res = await sendRuntimeMessageAsync({ type: 'TAB_MUTE_FOR_BREAK', action: 'mute' });
+    tabMuteAppliedByUs = res?.weMuted === true;
+  }
   const safeLingerMs = Math.max(6 * 1000, Number(lingerMs) || DEFAULT_LINGER_MS);
   const safeVideoFile = getSafeCatVideoFile(videoFile);
-  const timeStr = formatTime(timeSpent);
-  const limitStr = formatTime(limit);
+  const meowQuote = pickRandomMeowQuote();
+  const durationPhrase = formatDurationForBreak(timeSpent);
+  const limitPhrase = formatDurationForBreak(limit);
 
   catOverlay = document.createElement('div');
   catOverlay.id = 'fcb-overlay';
@@ -75,12 +172,17 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
     </div>
     <div class="fcb-card" id="fcb-card">
       <button class="fcb-card-close" id="fcb-card-close" aria-label="Close dialog">×</button>
-      <p class="fcb-title">The cat has claimed your screen</p>
-      <p class="fcb-body">You've been on <strong>${escapeHTML(domain)}</strong><br>for <strong>${timeStr}</strong> (limit: ${limitStr})</p>
+      <p class="fcb-title">${escapeHTML(meowQuote)}</p>
+      <p class="fcb-body">This cat wants you to take a break. You have been on <strong>${escapeHTML(domain)}</strong> for <strong>${escapeHTML(durationPhrase)}</strong>.</p>
+      <p class="fcb-body fcb-body-limit">Your time limit here is <strong>${escapeHTML(limitPhrase)}</strong>.</p>
     </div>
   `;
 
   document.body.appendChild(catOverlay);
+
+  if (isStreetStrutVideo(safeVideoFile)) {
+    catOverlay.classList.add('fcb-cat-nudge-right');
+  }
 
   const video = document.getElementById('fcb-source-video');
   const canvas = document.getElementById('fcb-cat-canvas');
@@ -98,7 +200,7 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
     if (event.key !== 'Escape') return;
     event.preventDefault();
     event.stopPropagation();
-    dismissWithOptions({ resetSite: true, resumePaused: false });
+    dismissWithOptions({ resetSite: true, resumePaused: true });
   };
   window.addEventListener('keydown', keydownHandler, true);
 
@@ -108,7 +210,7 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
     setupCanvas(video, canvas, buffer);
     drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
   } catch {
-    catOverlay.classList.add('fcb-video-fallback');
+    catOverlay?.classList.add('fcb-video-fallback');
   }
 
   const endsAt = Date.now() + safeLingerMs;
@@ -123,17 +225,75 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
 
 function pauseVisibleVideos() {
   pausedVideos = [];
-  const videos = document.querySelectorAll('video');
-  videos.forEach((video) => {
-    if (video.paused || video.ended) return;
-    if (!isElementVisible(video)) return;
+  const candidates = queryVideosInDocument().filter((v) => !isOurBreakVideoElement(v));
+
+  const tryPause = (video) => {
+    if (video.paused || video.ended) return false;
     try {
       video.pause();
       pausedVideos.push(video);
+      return true;
     } catch {
-      // Ignore pause failures per element.
+      return false;
+    }
+  };
+
+  let pausedAny = false;
+  candidates.forEach((video) => {
+    if (isElementVisible(video) && tryPause(video)) {
+      pausedAny = true;
     }
   });
+
+  // YouTube (and similar) often keep the <video> inside open shadow DOM — visibility checks can miss edge layouts.
+  if (!pausedAny && isYoutubeLikeHost()) {
+    candidates.forEach((video) => {
+      if (tryPause(video)) pausedAny = true;
+    });
+  }
+}
+
+/** Find <video> nodes including inside open shadow roots (e.g. YouTube's player). */
+function queryVideosInDocument() {
+  const videos = [];
+  const seen = new Set();
+  function collectFromRoot(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('video').forEach((v) => {
+      if (!seen.has(v)) {
+        seen.add(v);
+        videos.push(v);
+      }
+    });
+    root.querySelectorAll('*').forEach((el) => {
+      if (el.shadowRoot) {
+        collectFromRoot(el.shadowRoot);
+      }
+    });
+  }
+  collectFromRoot(document);
+  return videos;
+}
+
+function isOurBreakVideoElement(video) {
+  return Boolean(
+    video.closest('#fcb-overlay') || video.classList.contains('fcb-source-video') || video.id === 'fcb-source-video'
+  );
+}
+
+function isYoutubeLikeHost() {
+  try {
+    const h = location.hostname.toLowerCase();
+    return (
+      h === 'youtube.com' ||
+      h === 'www.youtube.com' ||
+      h === 'm.youtube.com' ||
+      h === 'music.youtube.com' ||
+      h === 'youtu.be'
+    );
+  } catch {
+    return false;
+  }
 }
 
 function resumePausedVideos() {
@@ -167,10 +327,15 @@ function getSafeCatVideoFile(videoFile) {
 }
 
 function getCatVideoUrl(videoFile) {
-  if (!catVideoUrls.has(videoFile)) {
-    catVideoUrls.set(videoFile, chrome.runtime.getURL(videoFile));
+  try {
+    if (!isExtensionContextValid()) return '';
+    if (!catVideoUrls.has(videoFile)) {
+      catVideoUrls.set(videoFile, chrome.runtime.getURL(videoFile));
+    }
+    return catVideoUrls.get(videoFile);
+  } catch {
+    return '';
   }
-  return catVideoUrls.get(videoFile);
 }
 
 function setupCanvas(video, canvas, buffer) {
@@ -184,7 +349,11 @@ function setupCanvas(video, canvas, buffer) {
 function drawCatFrame(video, canvas, ctx, buffer, bufferCtx) {
   if (!catOverlay) return;
 
-  if (video.readyState >= 2) {
+  const now = performance.now();
+  const shouldDraw = video.readyState >= 2 && (now - lastDrawTime >= DRAW_INTERVAL_MS);
+
+  if (shouldDraw) {
+    lastDrawTime = now;
     try {
       const targetSize = getScaledVideoSize(video);
       if (buffer.width !== targetSize.width || buffer.height !== targetSize.height) {
@@ -252,7 +421,7 @@ function drawCatFrame(video, canvas, ctx, buffer, bufferCtx) {
 function getScaledVideoSize(video) {
   const sourceWidth = video.videoWidth || 1920;
   const sourceHeight = video.videoHeight || 1080;
-  const width = Math.min(1280, sourceWidth);
+  const width = Math.min(640, sourceWidth);
   const height = Math.round((sourceHeight / sourceWidth) * width);
   return { width, height };
 }
@@ -292,16 +461,29 @@ function dismiss() {
 function dismissWithOptions(options = {}) {
   const { resetSite = false, resumePaused = false } = options;
   if (!catOverlay) return;
+
+  const overlayEl = catOverlay;
+  catOverlay = null;
+
   clearTimeout(hideTimer);
+  hideTimer = null;
   clearTimeout(dialogHideTimer);
+  dialogHideTimer = null;
   clearInterval(countdownTimer);
+  countdownTimer = null;
   cancelAnimationFrame(drawFrameId);
+  drawFrameId = null;
+
   if (keydownHandler) {
     window.removeEventListener('keydown', keydownHandler, true);
     keydownHandler = null;
   }
   if (resetSite) {
-    chrome.runtime.sendMessage({ type: 'RESET_SITE', domain: currentDomain });
+    safeSendRuntimeMessage({ type: 'RESET_SITE', domain: currentDomain });
+  }
+  if (tabMuteAppliedByUs) {
+    tabMuteAppliedByUs = false;
+    void sendRuntimeMessageAsync({ type: 'TAB_MUTE_FOR_BREAK', action: 'unmute' });
   }
   if (resumePaused) {
     resumePausedVideos();
@@ -309,14 +491,14 @@ function dismissWithOptions(options = {}) {
     pausedVideos = [];
   }
 
-  const video = document.getElementById('fcb-source-video');
+  const video = overlayEl.querySelector('#fcb-source-video');
   video?.pause();
-  catOverlay.classList.remove('fcb-in');
-  catOverlay.classList.add('fcb-out');
+
+  overlayEl.classList.remove('fcb-in');
+  overlayEl.classList.add('fcb-out');
 
   setTimeout(() => {
-    catOverlay?.remove();
-    catOverlay = null;
+    overlayEl.remove();
   }, 450);
 }
 
@@ -422,6 +604,30 @@ function formatCountdown(ms) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function pickRandomMeowQuote() {
+  const i = Math.floor(Math.random() * BREAK_MEOW_QUOTES.length);
+  return BREAK_MEOW_QUOTES[i] || BREAK_MEOW_QUOTES[0];
+}
+
+/** Wording for overlay copy, e.g. "12 minutes", "1 hour 3 minutes". */
+function formatDurationForBreak(ms) {
+  const rawSec = Math.floor(Number(ms) / 1000);
+  const totalSec = Math.max(rawSec, 0);
+  if (totalSec < 60) {
+    const s = Math.max(1, totalSec || 1);
+    return s === 1 ? '1 second' : `${s} seconds`;
+  }
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  if (h > 0) {
+    const hourPart = h === 1 ? '1 hour' : `${h} hours`;
+    if (m === 0) return hourPart;
+    const minPart = m === 1 ? '1 minute' : `${m} minutes`;
+    return `${hourPart} ${minPart}`;
+  }
+  return m === 1 ? '1 minute' : `${m} minutes`;
 }
 
 function formatTime(ms) {
