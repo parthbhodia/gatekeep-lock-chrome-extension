@@ -21,8 +21,18 @@ const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
 const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
-const BRIDAL_TIPS_VIDEO_FILE = 'assets/cat-elegant-steps.mp4';
-const STREET_STRUT_VIDEO_FILE = 'assets/cat-street-strut.mp4';
+const BRIDAL_TIPS_VIDEO_FILE = 'cat-elegant-steps.mp4';
+const STREET_STRUT_VIDEO_FILE = 'cat-street-strut.mp4';
+
+/** Strip legacy assets/ prefix so keys are always flat. */
+function normalizeVideoFile(file) {
+  return (file || '').replace(/^assets\//, '');
+}
+
+/** Accept any cat-*.mp4 from the Supabase bucket — no hardcoded list needed. */
+function isAllowedVideoFile(file) {
+  return typeof file === 'string' && /^cat-[a-z0-9-]+\.mp4$/.test(file);
+}
 
 /** Picked at random each time the break overlay opens. */
 const BREAK_MEOW_QUOTES = [
@@ -48,21 +58,6 @@ const BREAK_MEOW_QUOTES = [
   'Tail says sideways — that means take five, friend.'
 ];
 
-const ALLOWED_CAT_VIDEO_FILES = new Set([
-  'cat-sad-meow.mp4',
-  'cat-playful.mp4',
-  'cat-curious.mp4',
-  'cat-chill.mp4',
-  'assets/cat-morning-paws.mp4',
-  BRIDAL_TIPS_VIDEO_FILE,
-  'assets/cat-garden-stroll.mp4',
-  'assets/cat-alley-amble.mp4',
-  'assets/cat-window-watcher.mp4',
-  'assets/cat-curious-stroll.mp4',
-  'assets/cat-lazy-stretch.mp4',
-  STREET_STRUT_VIDEO_FILE,
-  'assets/cat-twilight-prowl.mp4'
-]);
 
 function isExtensionContextValid() {
   try {

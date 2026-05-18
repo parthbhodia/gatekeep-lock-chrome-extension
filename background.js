@@ -4,23 +4,107 @@
 // ─── Supabase CDN ─────────────────────────────────────────────────────────────
 
 const SUPABASE_BASE = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/public/cat-videos/';
+const SUPABASE_LIST_URL = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/list/cat-videos';
+// Publishable (anon) key — safe to ship in client code, read-only access only
+const SUPABASE_ANON_KEY = 'sb_publishable__RWZ07cSXRVJsMRnNoUjww_rGfM1dB6';
 const VIDEO_CACHE_NAME = 'cat-videos-v1';
 
-/** Converts an internal file key (e.g. 'assets/cat-curious.mp4') to its flat Supabase URL. */
-function getSupabaseUrl(file) {
-  return SUPABASE_BASE + file.replace(/^assets\//, '');
+/** Strip legacy assets/ prefix so all file keys are flat (e.g. 'cat-curious.mp4'). */
+function normalizeVideoFile(file) {
+  return (file || '').replace(/^assets\//, '');
 }
 
-/** Download and cache all cat videos. Called on install/update. */
+/** Returns the public Supabase URL for a video file. */
+function getSupabaseUrl(file) {
+  return SUPABASE_BASE + normalizeVideoFile(file);
+}
+
+/**
+ * Hardcoded fallback — used when Supabase is unreachable or the listing
+ * policy hasn't been enabled yet. Does not need to be kept in sync manually;
+ * the live list from the Storage API takes precedence once the policy is on.
+ */
+const DEFAULT_CAT_VIDEO_FILES = [
+  'cat-alley-amble.mp4',
+  'cat-chill.mp4',
+  'cat-curious.mp4',
+  'cat-curious-stroll.mp4',
+  'cat-elegant-steps.mp4',
+  'cat-garden-stroll.mp4',
+  'cat-lazy-stretch.mp4',
+  'cat-morning-paws.mp4',
+  'cat-playful.mp4',
+  'cat-sad-meow.mp4',
+  'cat-street-strut.mp4',
+  'cat-twilight-prowl.mp4',
+  'cat-window-watcher.mp4'
+];
+
+/**
+ * Fetch the live file list directly from Supabase Storage.
+ * Requires a SELECT policy on storage.objects for the anon role
+ * (Supabase Dashboard → Storage → cat-videos → Policies).
+ */
+async function fetchLiveVideoList() {
+  try {
+    const res = await fetch(SUPABASE_LIST_URL, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prefix: '', limit: 200 }),
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) return null;
+    // Extract filenames, flatten any legacy assets/ prefix, keep only cat-*.mp4
+    const files = items
+      .map((item) => normalizeVideoFile(item.name || ''))
+      .filter((f) => /^cat-[a-z0-9-]+\.mp4$/.test(f))
+      .sort();
+    if (files.length === 0) return null;
+    await chrome.storage.local.set({ catVideoManifest: files, catVideoManifestTs: Date.now() });
+    return files;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the current video list.
+ * Checks cache first (6-hour TTL), then fetches live from Supabase Storage,
+ * then falls back to the hardcoded default list if offline / policy not set yet.
+ */
+async function getVideoManifest() {
+  try {
+    const { catVideoManifest, catVideoManifestTs } = await chrome.storage.local.get([
+      'catVideoManifest',
+      'catVideoManifestTs'
+    ]);
+    const stale =
+      !catVideoManifestTs || Date.now() - catVideoManifestTs > 6 * 60 * 60 * 1000;
+    if (catVideoManifest && !stale) return catVideoManifest;
+    const fresh = await fetchLiveVideoList();
+    return fresh || catVideoManifest || DEFAULT_CAT_VIDEO_FILES;
+  } catch {
+    return DEFAULT_CAT_VIDEO_FILES;
+  }
+}
+
+/** Download and cache all cat videos from Supabase. Called on install/update. */
 async function cacheAllVideos() {
   try {
+    // Always fetch a fresh list on install/update so new videos appear immediately
+    const files = (await fetchLiveVideoList()) || (await getVideoManifest());
     // Purge any old cache versions first
     const allKeys = await caches.keys();
     await Promise.all(allKeys.filter((k) => k !== VIDEO_CACHE_NAME).map((k) => caches.delete(k)));
 
     const cache = await caches.open(VIDEO_CACHE_NAME);
     await Promise.all(
-      CAT_VIDEO_FILES_FOR_RANDOM.map(async (file) => {
+      files.map(async (file) => {
         const url = getSupabaseUrl(file);
         try {
           const res = await fetch(url);
@@ -38,8 +122,9 @@ async function cacheAllVideos() {
 /** Re-cache only if the cache is empty (e.g. after a browser data clear). */
 async function warmCacheIfEmpty() {
   try {
+    const files = await getVideoManifest();
     const cache = await caches.open(VIDEO_CACHE_NAME);
-    const firstUrl = getSupabaseUrl(CAT_VIDEO_FILES_FOR_RANDOM[0]);
+    const firstUrl = getSupabaseUrl(files[0]);
     const hit = await cache.match(firstUrl);
     if (!hit) await cacheAllVideos();
   } catch {
@@ -53,23 +138,6 @@ let segmentStart = null; // Timestamp when current tracking segment started
 let activeDomain = null;
 const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
 const TRACKING_STATE_KEY = 'trackingState';
-
-/** Must stay in sync with popup `CAT_VIDEOS` / content `ALLOWED_CAT_VIDEO_FILES`. */
-const CAT_VIDEO_FILES_FOR_RANDOM = [
-  'cat-sad-meow.mp4',
-  'cat-playful.mp4',
-  'cat-curious.mp4',
-  'cat-chill.mp4',
-  'assets/cat-morning-paws.mp4',
-  'assets/cat-elegant-steps.mp4',
-  'assets/cat-garden-stroll.mp4',
-  'assets/cat-alley-amble.mp4',
-  'assets/cat-window-watcher.mp4',
-  'assets/cat-curious-stroll.mp4',
-  'assets/cat-lazy-stretch.mp4',
-  'assets/cat-street-strut.mp4',
-  'assets/cat-twilight-prowl.mp4'
-];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -321,7 +389,7 @@ async function checkAndNotify() {
       timeSpent,
       limit,
       lingerMs: getCatLingerMs(settings),
-      videoFile: resolveCatVideoFileForBreak(settings)
+      videoFile: await resolveCatVideoFileForBreak(settings)
     };
 
     let sent = await trySendToTab(activeTabId, payload);
@@ -382,17 +450,14 @@ function getCatLingerMs(settings) {
   return Math.max(0.1, Number.isFinite(minutes) ? minutes : 2) * 60 * 1000;
 }
 
-function pickRandomCatVideoFile() {
-  const i = Math.floor(Math.random() * CAT_VIDEO_FILES_FOR_RANDOM.length);
-  return CAT_VIDEO_FILES_FOR_RANDOM[i] || DEFAULT_CAT_VIDEO_FILE;
-}
-
-function resolveCatVideoFileForBreak(settings) {
+async function resolveCatVideoFileForBreak(settings) {
+  const files = await getVideoManifest();
   if (settings.randomCatVideo === true) {
-    return pickRandomCatVideoFile();
+    const i = Math.floor(Math.random() * files.length);
+    return files[i] || DEFAULT_CAT_VIDEO_FILE;
   }
-  const f = settings.catVideoFile || DEFAULT_CAT_VIDEO_FILE;
-  return CAT_VIDEO_FILES_FOR_RANDOM.includes(f) ? f : DEFAULT_CAT_VIDEO_FILE;
+  const f = normalizeVideoFile(settings.catVideoFile || DEFAULT_CAT_VIDEO_FILE);
+  return files.includes(f) ? f : DEFAULT_CAT_VIDEO_FILE;
 }
 
 function normalizeDomain(domain) {
@@ -577,6 +642,7 @@ async function handleMessage(msg) {
     }
     case 'GET_CAT_VIDEO': {
       try {
+        // Normalize so legacy 'assets/cat-*.mp4' keys still resolve correctly
         const url = getSupabaseUrl(msg.file);
         const cache = await caches.open(VIDEO_CACHE_NAME);
         let res = await cache.match(url);
@@ -591,6 +657,10 @@ async function handleMessage(msg) {
       } catch {
         return { ok: false };
       }
+    }
+    case 'GET_CAT_VIDEOS_LIST': {
+      const files = await getVideoManifest();
+      return { ok: true, files };
     }
     case 'TAB_MUTE_FOR_BREAK': {
       const tabId = sender.tab?.id;

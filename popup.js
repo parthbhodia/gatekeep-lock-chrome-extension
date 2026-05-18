@@ -1,25 +1,33 @@
 const DEFAULT_VIDEO_FILE = 'cat-curious.mp4';
 const SUPABASE_BASE = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/public/cat-videos/';
-function getSupabaseUrl(file) {
-  return SUPABASE_BASE + file.replace(/^assets\//, '');
+
+/** Strip legacy assets/ prefix so keys are always flat. */
+function normalizeVideoFile(file) {
+  return (file || '').replace(/^assets\//, '');
 }
+
+function getSupabaseUrl(file) {
+  return SUPABASE_BASE + normalizeVideoFile(file);
+}
+
+/** Auto-generate a display label from a filename, e.g. 'cat-morning-paws.mp4' → 'Morning Paws'. */
+function fileToLabel(filename) {
+  return normalizeVideoFile(filename)
+    .replace(/\.mp4$/, '')
+    .replace(/^cat-/, '')
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 const LIMIT_CHIPS = [15, 30, 45, 60, 90];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
-const CAT_VIDEOS = [
-  { file: 'cat-sad-meow.mp4',              label: 'Sad Cat' },
-  { file: 'cat-playful.mp4',               label: 'Playful Cat' },
-  { file: 'cat-curious.mp4',               label: 'Curious Cat' },
-  { file: 'cat-chill.mp4',                 label: 'Chill Cat' },
-  { file: 'assets/cat-morning-paws.mp4',   label: 'Morning Paws' },
-  { file: 'assets/cat-elegant-steps.mp4',  label: 'Elegant Steps' },
-  { file: 'assets/cat-garden-stroll.mp4',  label: 'Garden Stroll' },
-  { file: 'assets/cat-alley-amble.mp4',    label: 'Alley Amble' },
-  { file: 'assets/cat-window-watcher.mp4', label: 'Window Watcher' },
-  { file: 'assets/cat-curious-stroll.mp4', label: 'Curious Stroll' },
-  { file: 'assets/cat-lazy-stretch.mp4',   label: 'Lazy Stretch' },
-  { file: 'assets/cat-street-strut.mp4',   label: 'Street Strut' },
-  { file: 'assets/cat-twilight-prowl.mp4', label: 'Twilight Prowl' }
-];
+
+/**
+ * Dynamically populated from the Supabase manifest at startup.
+ * Fallback covers the case where background is still waking up.
+ */
+let catVideos = [];
 
 let settings = {
   defaultLimit: 30 * 60 * 1000,
@@ -72,13 +80,45 @@ const TOUR_STEPS = [
 ];
 
 async function load() {
-  try {
-    const data = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    if (data?.settings) settings = { ...settings, ...data.settings };
-    if (data?.siteTime) siteTime = data.siteTime;
-  } catch {
-    // Ignore first-open worker race.
+  // Fetch settings and video manifest in parallel
+  const [statsData, manifestData] = await Promise.allSettled([
+    chrome.runtime.sendMessage({ type: 'GET_STATS' }),
+    chrome.runtime.sendMessage({ type: 'GET_CAT_VIDEOS_LIST' })
+  ]);
+
+  if (statsData.status === 'fulfilled' && statsData.value?.settings) {
+    settings = { ...settings, ...statsData.value.settings };
   }
+  if (statsData.status === 'fulfilled' && statsData.value?.siteTime) {
+    siteTime = statsData.value.siteTime;
+  }
+
+  // Build dynamic video list from manifest; fall back to stored default names
+  if (manifestData.status === 'fulfilled' && manifestData.value?.ok && Array.isArray(manifestData.value.files)) {
+    catVideos = manifestData.value.files.map((f) => ({ file: normalizeVideoFile(f), label: fileToLabel(f) }));
+  }
+  if (catVideos.length === 0) {
+    // Background not ready or manifest unavailable — seed from chrome.storage directly
+    try {
+      const { catVideoManifest } = await chrome.storage.local.get('catVideoManifest');
+      if (Array.isArray(catVideoManifest) && catVideoManifest.length > 0) {
+        catVideos = catVideoManifest.map((f) => ({ file: normalizeVideoFile(f), label: fileToLabel(f) }));
+      }
+    } catch { /* ignore */ }
+  }
+  if (catVideos.length === 0) {
+    // Hard fallback — mirrors DEFAULT_CAT_VIDEO_FILES in background.js
+    catVideos = [
+      'cat-alley-amble.mp4','cat-chill.mp4','cat-curious.mp4','cat-curious-stroll.mp4',
+      'cat-elegant-steps.mp4','cat-garden-stroll.mp4','cat-lazy-stretch.mp4',
+      'cat-morning-paws.mp4','cat-playful.mp4','cat-sad-meow.mp4',
+      'cat-street-strut.mp4','cat-twilight-prowl.mp4','cat-window-watcher.mp4'
+    ].map((f) => ({ file: f, label: fileToLabel(f) }));
+  }
+
+  // Normalize any legacy 'assets/cat-*.mp4' stored in settings
+  settings.catVideoFile = normalizeVideoFile(settings.catVideoFile || DEFAULT_VIDEO_FILE);
+
   enforceKnownVideo();
   render();
   bindEvents();
@@ -88,13 +128,16 @@ async function load() {
 }
 
 function enforceKnownVideo() {
-  const exists = CAT_VIDEOS.some((video) => video.file === settings.catVideoFile);
-  if (!exists) settings.catVideoFile = DEFAULT_VIDEO_FILE;
+  const file = normalizeVideoFile(settings.catVideoFile);
+  settings.catVideoFile = file;
+  const exists = catVideos.some((v) => v.file === file);
+  if (!exists && catVideos.length > 0) settings.catVideoFile = DEFAULT_VIDEO_FILE;
 }
 
 function getCatVideoLabel(file) {
-  const v = CAT_VIDEOS.find((video) => video.file === file);
-  return v ? v.label : 'Cat';
+  const norm = normalizeVideoFile(file);
+  const v = catVideos.find((video) => video.file === norm);
+  return v ? v.label : fileToLabel(norm || DEFAULT_VIDEO_FILE);
 }
 
 function getCatBreakDisplayLabel() {
@@ -103,8 +146,9 @@ function getCatBreakDisplayLabel() {
 }
 
 function pickRandomCatFileForPreview() {
-  const i = Math.floor(Math.random() * CAT_VIDEOS.length);
-  return CAT_VIDEOS[i].file;
+  if (catVideos.length === 0) return DEFAULT_VIDEO_FILE;
+  const i = Math.floor(Math.random() * catVideos.length);
+  return catVideos[i].file;
 }
 
 function render() {
@@ -353,8 +397,8 @@ function addExcludedDomainFromInput() {
 
 function renderVideoGrid() {
   const grid = document.getElementById('cat-video-grid');
-  grid.innerHTML = CAT_VIDEOS.map((video) => {
-      const selected = !settings.randomCatVideo && video.file === settings.catVideoFile;
+  grid.innerHTML = catVideos.map((video) => {
+    const selected = !settings.randomCatVideo && video.file === settings.catVideoFile;
     const src = getSupabaseUrl(video.file);
     return `
       <button class="video-card ${selected ? 'is-selected' : ''}" type="button" data-video="${video.file}">
