@@ -135,6 +135,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE) {
+  videoFile = normalizeVideoFile(videoFile) || DEFAULT_CAT_VIDEO_FILE;
   currentDomain = domain;
   catShownAt = Date.now();
   tabMuteAppliedByUs = false;
@@ -314,7 +315,8 @@ function isElementVisible(element) {
 }
 
 function getSafeCatVideoFile(videoFile) {
-  return ALLOWED_CAT_VIDEO_FILES.has(videoFile) ? videoFile : DEFAULT_CAT_VIDEO_FILE;
+  const flat = normalizeVideoFile(videoFile);
+  return isAllowedVideoFile(flat) ? flat : DEFAULT_CAT_VIDEO_FILE;
 }
 
 async function getCatVideoUrl(videoFile) {
