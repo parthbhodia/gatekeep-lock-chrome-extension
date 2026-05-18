@@ -5,8 +5,25 @@ let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
 let activeDomain = null;
-const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
+const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
 const TRACKING_STATE_KEY = 'trackingState';
+
+/** Must stay in sync with popup `CAT_VIDEOS` / content `ALLOWED_CAT_VIDEO_FILES`. */
+const CAT_VIDEO_FILES_FOR_RANDOM = [
+  'cat-sad-meow.mp4',
+  'cat-playful.mp4',
+  'cat-curious.mp4',
+  'cat-chill.mp4',
+  'assets/cat-morning-paws.mp4',
+  'assets/cat-elegant-steps.mp4',
+  'assets/cat-garden-stroll.mp4',
+  'assets/cat-alley-amble.mp4',
+  'assets/cat-window-watcher.mp4',
+  'assets/cat-curious-stroll.mp4',
+  'assets/cat-lazy-stretch.mp4',
+  'assets/cat-street-strut.mp4',
+  'assets/cat-twilight-prowl.mp4'
+];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -23,7 +40,9 @@ async function init() {
         excludedSites: [],
         enabled: true,
         catLingerMinutes: 2,
-        catVideoFile: DEFAULT_CAT_VIDEO_FILE
+        catVideoFile: DEFAULT_CAT_VIDEO_FILE,
+        trackedSitesOnly: false,
+        randomCatVideo: false
       },
       siteTime: {},
       lastReset: new Date().toDateString(),
@@ -37,6 +56,8 @@ async function init() {
         defaultLimit: 30 * 60 * 1000,
         catLingerMinutes: 2,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
+        trackedSitesOnly: false,
+        randomCatVideo: false,
         ...settings
       }
     });
@@ -78,6 +99,8 @@ chrome.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
   await persistTrackingState();
   // Immediately check when switching tabs (catches already-over-limit sites)
   await checkAndNotify();
+  // New tab / in-flight load: domain can be null briefly; re-check when URL exists
+  scheduleCheckOverLimitForTab(tabId);
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
@@ -87,6 +110,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   }
 
   if (tabId !== activeTabId) return;
+
+  // URL committed — important for duplicate tabs so we do not miss checkAndNotify
+  // when activation ran before the navigation URL was available.
+  if (changeInfo.url) {
+    const domain = extractDomainFromUrl(changeInfo.url);
+    if (domain) {
+      activeDomain = domain;
+      await persistTrackingState();
+      await checkAndNotify();
+    }
+  }
 
   if (changeInfo.status === 'loading') {
     await flush();
@@ -111,6 +145,21 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   activeDomain = null;
   segmentStart = null;
   await persistTrackingState();
+
+  // Closing the active tab focuses another tab before the next onActivated in some cases.
+  try {
+    const [next] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!next?.id || !next.url || !/^https?:\/\//.test(next.url)) return;
+    activeTabId = next.id;
+    activeWindowId = next.windowId;
+    activeDomain = extractDomainFromUrl(next.url);
+    segmentStart = Date.now();
+    await persistTrackingState();
+    await checkAndNotify();
+    scheduleCheckOverLimitForTab(next.id);
+  } catch {
+    // onActivated will restore.
+  }
 });
 
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
@@ -173,6 +222,12 @@ async function flush() {
     return;
   }
 
+  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) {
+    segmentStart = Date.now();
+    await persistTrackingState();
+    return;
+  }
+
   siteTime[domain] = (siteTime[domain] || 0) + elapsed;
   await chrome.storage.local.set({ siteTime });
 }
@@ -194,6 +249,8 @@ async function checkAndNotify() {
   if (!settings.enabled) return;
   if (isExcludedDomain(domain, settings.excludedSites)) return;
 
+  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) return;
+
   const timeSpent = siteTime[domain] || 0;
   const limit = getDomainLimit(domain, settings);
 
@@ -209,17 +266,39 @@ async function checkAndNotify() {
       timeSpent,
       limit,
       lingerMs: getCatLingerMs(settings),
-      videoFile: settings.catVideoFile
+      videoFile: resolveCatVideoFileForBreak(settings)
     };
 
-    const sent = await trySendToTab(activeTabId, payload);
+    let sent = await trySendToTab(activeTabId, payload);
     if (!sent) {
       const injected = await ensureTabHasContent(activeTabId);
       if (injected) {
-        await trySendToTab(activeTabId, payload);
+        for (let attempt = 0; attempt < 8 && !sent; attempt += 1) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, 120));
+          sent = await trySendToTab(activeTabId, payload);
+        }
       }
     }
   }
+}
+
+/** Re-run limit check shortly after tab switch — domain can be unknown until navigation settles. */
+function scheduleCheckOverLimitForTab(tabId) {
+  const delays = [150, 450, 1400];
+  delays.forEach((delayMs) => {
+    setTimeout(async () => {
+      try {
+        if (activeTabId !== tabId) return;
+        const domain = await getDomainForTab(tabId);
+        if (!domain) return;
+        activeDomain = domain;
+        await persistTrackingState();
+        await checkAndNotify();
+      } catch {
+        // Ignore — e.g. tab closed.
+      }
+    }, delayMs);
+  });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -229,12 +308,36 @@ function getDomainLimit(domain, settings) {
   if (domain in siteLimits) return siteLimits[domain];
   const alt = `www.${domain}`;
   if (alt in siteLimits) return siteLimits[alt];
+  if (settings.trackedSitesOnly === true) return 0;
   return settings.defaultLimit ?? 30 * 60 * 1000;
+}
+
+function hasExplicitSiteLimit(domain, settings) {
+  if (!domain) return false;
+  const siteLimits = settings.siteLimits || {};
+  if (Object.prototype.hasOwnProperty.call(siteLimits, domain)) return true;
+  const altKey = `www.${domain}`;
+  if (Object.prototype.hasOwnProperty.call(siteLimits, altKey)) return true;
+  const norm = normalizeDomain(domain);
+  return Object.keys(siteLimits).some((key) => normalizeDomain(key) === norm);
 }
 
 function getCatLingerMs(settings) {
   const minutes = Number(settings.catLingerMinutes ?? 2);
   return Math.max(0.1, Number.isFinite(minutes) ? minutes : 2) * 60 * 1000;
+}
+
+function pickRandomCatVideoFile() {
+  const i = Math.floor(Math.random() * CAT_VIDEO_FILES_FOR_RANDOM.length);
+  return CAT_VIDEO_FILES_FOR_RANDOM[i] || DEFAULT_CAT_VIDEO_FILE;
+}
+
+function resolveCatVideoFileForBreak(settings) {
+  if (settings.randomCatVideo === true) {
+    return pickRandomCatVideoFile();
+  }
+  const f = settings.catVideoFile || DEFAULT_CAT_VIDEO_FILE;
+  return CAT_VIDEO_FILES_FOR_RANDOM.includes(f) ? f : DEFAULT_CAT_VIDEO_FILE;
 }
 
 function normalizeDomain(domain) {
@@ -416,6 +519,24 @@ async function handleMessage(msg) {
       // Clear snoozed gates so new limits/settings apply immediately.
       await chrome.storage.local.set({ settings: nextSettings, snoozed: {} });
       return { ok: true };
+    }
+    case 'TAB_MUTE_FOR_BREAK': {
+      const tabId = sender.tab?.id;
+      if (tabId == null) return { ok: false };
+      if (msg.action === 'mute') {
+        const tab = await chrome.tabs.get(tabId);
+        const wasMuted = tab.mutedInfo?.muted ?? false;
+        if (!wasMuted) {
+          await chrome.tabs.update(tabId, { muted: true });
+          return { ok: true, weMuted: true };
+        }
+        return { ok: true, weMuted: false };
+      }
+      if (msg.action === 'unmute') {
+        await chrome.tabs.update(tabId, { muted: false });
+        return { ok: true };
+      }
+      return { ok: false };
     }
     default:
       return null;

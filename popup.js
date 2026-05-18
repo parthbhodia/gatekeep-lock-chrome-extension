@@ -1,11 +1,20 @@
-const DEFAULT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
-const LIMIT_CHIPS = [15, 30, 45, 60, 90, 120];
-const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5, 10];
+const DEFAULT_VIDEO_FILE = 'cat-curious.mp4';
+const LIMIT_CHIPS = [15, 30, 45, 60, 90];
+const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
 const CAT_VIDEOS = [
-  { file: 'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4', label: 'Sad Cat' },
-  { file: 'snaptik_7330929514878356741_v3.mp4', label: 'Playful Cat' },
-  { file: 'snaptik_7313952845961645314_v3.mp4', label: 'Curious Cat' },
-  { file: 'snaptik_7632449998856178965_v3.mp4', label: 'Chill Cat' }
+  { file: 'cat-sad-meow.mp4',              label: 'Sad Cat' },
+  { file: 'cat-playful.mp4',               label: 'Playful Cat' },
+  { file: 'cat-curious.mp4',               label: 'Curious Cat' },
+  { file: 'cat-chill.mp4',                 label: 'Chill Cat' },
+  { file: 'assets/cat-morning-paws.mp4',   label: 'Morning Paws' },
+  { file: 'assets/cat-elegant-steps.mp4',  label: 'Elegant Steps' },
+  { file: 'assets/cat-garden-stroll.mp4',  label: 'Garden Stroll' },
+  { file: 'assets/cat-alley-amble.mp4',    label: 'Alley Amble' },
+  { file: 'assets/cat-window-watcher.mp4', label: 'Window Watcher' },
+  { file: 'assets/cat-curious-stroll.mp4', label: 'Curious Stroll' },
+  { file: 'assets/cat-lazy-stretch.mp4',   label: 'Lazy Stretch' },
+  { file: 'assets/cat-street-strut.mp4',   label: 'Street Strut' },
+  { file: 'assets/cat-twilight-prowl.mp4', label: 'Twilight Prowl' }
 ];
 
 let settings = {
@@ -14,7 +23,9 @@ let settings = {
   excludedSites: [],
   enabled: true,
   catLingerMinutes: 2,
-  catVideoFile: DEFAULT_VIDEO_FILE
+  catVideoFile: DEFAULT_VIDEO_FILE,
+  trackedSitesOnly: false,
+  randomCatVideo: false
 };
 let siteTime = {};
 let saveTimeout = null;
@@ -22,6 +33,51 @@ let isSaving = false;
 let toastTimer = null;
 let defaultLimitToastTimer = null;
 let catLingerToastTimer = null;
+
+const TOUR_STORAGE_KEY = 'catBreakTourCompleted';
+let tourStepIndex = 0;
+
+const TOUR_STEPS = [
+  {
+    tab: 'cat',
+    title: 'Welcome',
+    body: 'Four stops: default time, listed-only mode, site list, exclusions. Next shows each control.',
+    targetSelector: null
+  },
+  {
+    tab: 'cat',
+    title: 'Default time limit',
+    body: 'Minutes on a site before the cat. Chips or type a number.',
+    targetSelector: '#tour-anchor-default-limit'
+  },
+  {
+    tab: 'settings',
+    title: 'Only listed sites',
+    body: 'On: only domains in your list get timed. All others stay off the clock.',
+    targetSelector: '#tour-anchor-listed-only'
+  },
+  {
+    tab: 'settings',
+    title: 'Site list',
+    body: 'Domain + minutes, then Add—e.g. social sites with their own limits.',
+    targetSelector: '#tour-anchor-limit-by-site',
+    tourModalPlacement: 'top'
+  },
+  {
+    tab: 'settings',
+    title: 'Excluded',
+    body: 'Never timed here—no cat on these sites.',
+    targetSelector: '#tour-anchor-excluded',
+    tourModalPlacement: 'top',
+    tourScrollBlock: 'end'
+  },
+  {
+    tab: 'settings',
+    title: 'Done',
+    body: 'Change anytime. Tour in the tab bar replays this.',
+    targetSelector: null
+  }
+];
 
 async function load() {
   try {
@@ -36,6 +92,7 @@ async function load() {
   bindEvents();
   refreshShooCatState();
   initReviewBanner();
+  await initTour();
 }
 
 function enforceKnownVideo() {
@@ -43,9 +100,28 @@ function enforceKnownVideo() {
   if (!exists) settings.catVideoFile = DEFAULT_VIDEO_FILE;
 }
 
+function getCatVideoLabel(file) {
+  const v = CAT_VIDEOS.find((video) => video.file === file);
+  return v ? v.label : 'Cat';
+}
+
+function getCatBreakDisplayLabel() {
+  if (settings.randomCatVideo === true) return 'Random';
+  return getCatVideoLabel(settings.catVideoFile);
+}
+
+function pickRandomCatFileForPreview() {
+  const i = Math.floor(Math.random() * CAT_VIDEOS.length);
+  return CAT_VIDEOS[i].file;
+}
+
 function render() {
   document.getElementById('enabled-toggle').checked = settings.enabled !== false;
-  document.getElementById('default-limit').value = Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000));
+  const trackedOnly = document.getElementById('tracked-sites-only');
+  if (trackedOnly) trackedOnly.checked = settings.trackedSitesOnly === true;
+  const randomCat = document.getElementById('random-cat-toggle');
+  if (randomCat) randomCat.checked = settings.randomCatVideo === true;
+  syncDefaultLimitInputs(Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000)));
   document.getElementById('cat-linger').value = Math.max(0.1, Number(settings.catLingerMinutes ?? 2));
   document.getElementById('cat-video').value = settings.catVideoFile;
 
@@ -58,23 +134,29 @@ function render() {
   renderVideoGrid();
 }
 
+function syncDefaultLimitInputs(minutes) {
+  const v = String(minutes);
+  const main = document.getElementById('default-limit');
+  const cat = document.getElementById('default-limit-cat');
+  if (main) main.value = v;
+  if (cat) cat.value = v;
+}
+
 function renderDefaultLimitChips() {
-  const container = document.getElementById('default-limit-chips');
   const activeVal = Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000));
 
-  renderChips(
-    container,
-    LIMIT_CHIPS,
-    activeVal,
-    'm',
-    (value) => {
-      settings.defaultLimit = value * 60 * 1000;
-      document.getElementById('default-limit').value = value;
-      renderDefaultLimitChips();
-      queueSave();
-      showToast(`Default limit set to ${value}m`, 'success');
-    }
-  );
+  const onChip = (value) => {
+    settings.defaultLimit = value * 60 * 1000;
+    syncDefaultLimitInputs(value);
+    renderDefaultLimitChips();
+    queueSave();
+    showToast(`Default limit set to ${value}m`, 'success');
+  };
+
+  ['default-limit-chips', 'default-limit-chips-cat'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) renderChips(el, LIMIT_CHIPS, activeVal, 'm', onChip);
+  });
 }
 
 function renderCatLingerChips() {
@@ -105,6 +187,7 @@ function renderChips(container, values, activeValue, suffix, onClick) {
 
 function renderStats() {
   const el = document.getElementById('stats-list');
+  if (!el) return;
   const entries = Object.entries(siteTime).sort((a, b) => b[1] - a[1]).slice(0, 12);
 
   if (entries.length === 0) {
@@ -154,16 +237,38 @@ function renderSiteLimits() {
   }
 
   if (entries.length === 0) {
-    el.innerHTML = '<div class="empty">No site limits set</div>';
+    const hint =
+      settings.trackedSitesOnly === true
+        ? 'Add a site below. With only-list mode on, nothing is timed until you do.'
+        : 'No site limits set';
+    el.innerHTML = `<div class="empty">${hint}</div>`;
     return;
   }
 
-  el.innerHTML = entries.map(([domain, ms]) => `
+  const catLabel = getCatBreakDisplayLabel();
+  const catTitle =
+    settings.randomCatVideo === true
+      ? 'A random gallery cat each time you hit the limit. Turn off Random cat below to pin one video.'
+      : 'Same cat walks the screen when you hit the limit on any site. Change it in the Cat tab.';
+
+  el.innerHTML = `
+    <div class="site-limits-column-head">
+      <span>Site</span>
+      <span>Limit</span>
+      <span title="${catTitle}">Cat</span>
+      <span></span>
+    </div>
+    ${entries
+      .map(
+        ([domain, ms]) => `
     <div class="site-item">
       <span class="site-item-domain" title="${domain}">${domain}</span>
       <span class="site-item-limit">${Math.round(ms / 60000)}m</span>
+      <span class="site-item-cats" title="${catTitle}">${catLabel}</span>
       <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
-    </div>`).join('');
+    </div>`
+      )
+      .join('')}`;
 
   el.querySelectorAll('.site-item-rm').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -184,12 +289,25 @@ function renderExcludedSites() {
     return;
   }
 
-  el.innerHTML = sites.map((domain) => `
+  const exCatTitle = 'Excluded sites are not timed and never show the break cat.';
+  el.innerHTML = `
+    <div class="site-limits-column-head">
+      <span>Site</span>
+      <span>Limit</span>
+      <span title="${exCatTitle}">Cat</span>
+      <span></span>
+    </div>
+    ${sites
+      .map(
+        (domain) => `
     <div class="site-item">
       <span class="site-item-domain" title="${domain}">${domain}</span>
       <span class="site-item-limit" style="color:#2f995f">Excluded</span>
+      <span class="site-item-cats" title="${exCatTitle}">—</span>
       <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
-    </div>`).join('');
+    </div>`
+      )
+      .join('')}`;
 
   el.querySelectorAll('.site-item-rm').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -244,7 +362,7 @@ function addExcludedDomainFromInput() {
 function renderVideoGrid() {
   const grid = document.getElementById('cat-video-grid');
   grid.innerHTML = CAT_VIDEOS.map((video) => {
-    const selected = video.file === settings.catVideoFile;
+      const selected = !settings.randomCatVideo && video.file === settings.catVideoFile;
     const src = chrome.runtime.getURL(video.file);
     return `
       <button class="video-card ${selected ? 'is-selected' : ''}" type="button" data-video="${video.file}">
@@ -266,6 +384,8 @@ function renderVideoGrid() {
       settings.catVideoFile = card.dataset.video;
       document.getElementById('cat-video').value = card.dataset.video;
       renderVideoGrid();
+      renderSiteLimits();
+      renderExcludedSites();
       queueSave();
     });
   });
@@ -276,27 +396,58 @@ function bindEvents() {
     button.addEventListener('click', () => setActiveTab(button.dataset.tab));
   });
 
+  document.querySelectorAll('.section .info').forEach((icon) => {
+    icon.setAttribute('tabindex', '0');
+    icon.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+
   document.getElementById('enabled-toggle').addEventListener('change', (e) => {
     settings.enabled = e.target.checked;
     queueSave();
   });
 
-  document.getElementById('default-limit').addEventListener('input', (e) => {
+  document.getElementById('tracked-sites-only').addEventListener('change', (e) => {
+    settings.trackedSitesOnly = e.target.checked;
+    renderSiteLimits();
+    queueSave();
+    showToast(
+      settings.trackedSitesOnly
+        ? 'Only sites on your list are timed now'
+        : 'Default limit applies to all non-excluded sites again',
+      'info'
+    );
+  });
+
+  document.getElementById('random-cat-toggle').addEventListener('change', (e) => {
+    settings.randomCatVideo = e.target.checked;
+    renderVideoGrid();
+    renderSiteLimits();
+    queueSave();
+    showToast(settings.randomCatVideo ? 'Random cat on' : 'Random cat off', 'info');
+  });
+
+  const onDefaultLimitInput = (e) => {
     const mins = parseInt(e.target.value, 10);
     clearTimeout(defaultLimitToastTimer);
     if (Number.isNaN(mins) || mins < 1) {
       defaultLimitToastTimer = setTimeout(() => {
         showToast('Enter minutes (>=1)', 'error');
-        // Restore input to the last saved valid value so state stays consistent.
-        e.target.value = Math.max(1, Math.round((settings.defaultLimit || 30 * 60 * 1000) / 60000));
+        syncDefaultLimitInputs(Math.max(1, Math.round((settings.defaultLimit || 30 * 60 * 1000) / 60000)));
       }, 700);
       return;
     }
     settings.defaultLimit = mins * 60 * 1000;
+    syncDefaultLimitInputs(mins);
     renderDefaultLimitChips();
     queueSave();
     defaultLimitToastTimer = setTimeout(() => showToast(`Default limit set to ${mins}m`, 'success'), 700);
-  });
+  };
+
+  document.getElementById('default-limit').addEventListener('input', onDefaultLimitInput);
+  document.getElementById('default-limit-cat').addEventListener('input', onDefaultLimitInput);
 
   document.getElementById('cat-linger').addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
@@ -304,7 +455,7 @@ function bindEvents() {
     renderCatLingerChips();
     queueSave();
     clearTimeout(catLingerToastTimer);
-    catLingerToastTimer = setTimeout(() => showToast(`Cat linger set to ${settings.catLingerMinutes}m`, 'success'), 700);
+    catLingerToastTimer = setTimeout(() => showToast(`Auto-dismiss set to ${settings.catLingerMinutes}m`, 'success'), 700);
   });
 
   document.getElementById('add-btn').addEventListener('click', () => {
@@ -354,7 +505,8 @@ function bindEvents() {
     }
   });
 
-  document.getElementById('reset-all-btn').addEventListener('click', resetAllStats);
+  const resetAllBtn = document.getElementById('reset-all-btn');
+  if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllStats);
   document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
   document.getElementById('shoo-cat-btn').addEventListener('click', shooCatAway);
   document.getElementById('shoo-cat-btn-settings').addEventListener('click', shooCatAway);
@@ -363,11 +515,35 @@ function bindEvents() {
       flushPendingSave();
     }
   });
+
+  const tourReplay = document.getElementById('tour-replay');
+  if (tourReplay) tourReplay.addEventListener('click', () => openTour(0));
+  document.getElementById('tour-skip')?.addEventListener('click', () => closeTour(true));
+  document.getElementById('tour-next')?.addEventListener('click', () => {
+    if (tourStepIndex >= TOUR_STEPS.length - 1) {
+      closeTour(true);
+      return;
+    }
+    tourStepIndex += 1;
+    renderTourStep();
+    document.getElementById('tour-next')?.focus();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const overlay = document.getElementById('tour-overlay');
+    if (!overlay || overlay.classList.contains('is-hidden')) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeTour(true);
+    }
+  });
 }
 
 function setActiveTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach((button) => {
-    button.classList.toggle('is-active', button.dataset.tab === tabId);
+    const on = button.dataset.tab === tabId;
+    button.classList.toggle('is-active', on);
+    button.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('.tab-panel').forEach((panel) => {
     panel.classList.toggle('is-active', panel.dataset.panel === tabId);
@@ -464,17 +640,18 @@ async function previewCatNow() {
     }
 
     const domain = new URL(tab.url).hostname;
+    const videoFile = settings.randomCatVideo ? pickRandomCatFileForPreview() : settings.catVideoFile;
     await chrome.tabs.sendMessage(tab.id, {
       type: 'SHOW_CAT',
       domain,
       timeSpent: 31 * 60 * 1000,
       limit: 30 * 60 * 1000,
       lingerMs: Math.max(0.1, Number(settings.catLingerMinutes ?? 2)) * 60 * 1000,
-      videoFile: settings.catVideoFile,
+      videoFile,
       force: true
     });
-    msg.textContent = 'Cat sent to this tab.';
-    showToast('Cat sent to this tab', 'success');
+    msg.textContent = settings.randomCatVideo ? 'Preview: one random cat on this tab.' : 'Preview shown on this tab.';
+    showToast(settings.randomCatVideo ? 'Preview: random cat' : 'Preview shown on this tab', 'success');
     setTimeout(refreshShooCatState, 400);
   } catch {
     msg.textContent = 'Reload this page, then try again.';
@@ -532,7 +709,11 @@ async function refreshShooCatState() {
 
 function getDomainLimitMs(domain) {
   const siteLimits = settings.siteLimits || {};
-  return domain in siteLimits ? siteLimits[domain] : (settings.defaultLimit || 30 * 60 * 1000);
+  if (domain in siteLimits) return siteLimits[domain];
+  const alt = `www.${domain}`;
+  if (alt in siteLimits) return siteLimits[alt];
+  if (settings.trackedSitesOnly === true) return 0;
+  return settings.defaultLimit || 30 * 60 * 1000;
 }
 
 function fmtMs(ms) {
@@ -567,6 +748,141 @@ function initReviewBanner() {
     localStorage.setItem('cat_break_review_dismissed', '1');
     banner.classList.remove('is-visible');
   });
+}
+
+async function initTour() {
+  try {
+    const stored = await chrome.storage.local.get(TOUR_STORAGE_KEY);
+    if (!stored[TOUR_STORAGE_KEY]) openTour(0);
+  } catch {
+    /* storage unavailable; Tour button still works */
+  }
+}
+
+function openTour(fromStep = 0) {
+  tourStepIndex = fromStep;
+  const overlay = document.getElementById('tour-overlay');
+  const replay = document.getElementById('tour-replay');
+  if (!overlay) return;
+  overlay.classList.remove('is-hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  if (replay) replay.disabled = true;
+  renderTourStep();
+  queueMicrotask(() => document.getElementById('tour-next')?.focus());
+}
+
+function clearTourScrim() {
+  const scrim = document.getElementById('tour-scrim');
+  if (scrim) scrim.style.clipPath = 'none';
+}
+
+function setTourScrimHole(rect) {
+  const scrim = document.getElementById('tour-scrim');
+  if (!scrim) return;
+  if (!rect || rect.width < 4 || rect.height < 4) {
+    scrim.style.clipPath = 'none';
+    return;
+  }
+  const pad = 10;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  let x1 = rect.left - pad;
+  let y1 = rect.top - pad;
+  let x2 = rect.right + pad;
+  let y2 = rect.bottom + pad;
+  x1 = Math.max(0, Math.min(x1, W));
+  y1 = Math.max(0, Math.min(y1, H));
+  x2 = Math.max(0, Math.min(x2, W));
+  y2 = Math.max(0, Math.min(y2, H));
+  if (x2 - x1 < 24 || y2 - y1 < 24) {
+    scrim.style.clipPath = 'none';
+    return;
+  }
+  const d = `M 0 0 L ${W} 0 L ${W} ${H} L 0 ${H} Z M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2} L ${x1} ${y2} Z`;
+  scrim.style.clipPath = `path(evenodd, '${d}')`;
+}
+
+async function closeTour(markDone) {
+  const overlay = document.getElementById('tour-overlay');
+  const replay = document.getElementById('tour-replay');
+  if (!overlay) return;
+  clearTourPin();
+  clearTourScrim();
+  overlay.classList.remove('tour-has-target', 'tour-target-lower', 'tour-target-upper');
+  overlay.classList.add('is-hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+  if (replay) replay.disabled = false;
+  if (markDone) {
+    try {
+      await chrome.storage.local.set({ [TOUR_STORAGE_KEY]: true });
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function clearTourPin() {
+  document.querySelectorAll('.is-tour-pin').forEach((el) => el.classList.remove('is-tour-pin'));
+}
+
+function renderTourStep() {
+  const step = TOUR_STEPS[tourStepIndex];
+  if (!step) return;
+  const overlay = document.getElementById('tour-overlay');
+  if (overlay) {
+    overlay.classList.toggle('tour-has-target', Boolean(step.targetSelector));
+    overlay.classList.remove('tour-target-lower', 'tour-target-upper');
+  }
+  clearTourPin();
+  clearTourScrim();
+  setActiveTab(step.tab);
+  const titleEl = document.getElementById('tour-title');
+  const bodyEl = document.getElementById('tour-body');
+  const nextBtn = document.getElementById('tour-next');
+  const dotsEl = document.getElementById('tour-dots');
+  if (titleEl) titleEl.textContent = step.title;
+  if (bodyEl) bodyEl.textContent = step.body;
+  if (nextBtn) nextBtn.textContent = tourStepIndex >= TOUR_STEPS.length - 1 ? 'Done' : 'Next';
+  if (dotsEl) {
+    dotsEl.innerHTML = '';
+    TOUR_STEPS.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.className = `tour-dot${i === tourStepIndex ? ' is-active' : ''}`;
+      dotsEl.appendChild(dot);
+    });
+  }
+
+  const sel = step.targetSelector;
+  if (typeof sel === 'string' && sel.length > 0) {
+    const pinEl = document.querySelector(sel);
+    if (pinEl) {
+      pinEl.classList.add('is-tour-pin');
+      pinEl.scrollIntoView({
+        block: step.tourScrollBlock || 'nearest',
+        behavior: 'auto'
+      });
+      const applyHole = () => {
+        const r = pinEl.getBoundingClientRect();
+        setTourScrimHole(r);
+        if (overlay) {
+          let lower;
+          const place = step.tourModalPlacement;
+          if (place === 'top') lower = true;
+          else if (place === 'bottom') lower = false;
+          else {
+            const cy = r.top + r.height / 2;
+            lower = cy > window.innerHeight * 0.38;
+          }
+          overlay.classList.toggle('tour-target-lower', lower);
+          overlay.classList.toggle('tour-target-upper', !lower);
+        }
+      };
+      requestAnimationFrame(() => {
+        applyHole();
+        requestAnimationFrame(applyHole);
+      });
+    }
+  }
 }
 
 load();

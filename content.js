@@ -20,10 +20,9 @@ let keydownHandler = null;
 const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
-const DEFAULT_CAT_VIDEO_FILE = 'snaptik_7313952845961645314_v3.mp4';
-const BRIDAL_TIPS_VIDEO_FILE =
-  'assets/From KlickPin CF Love these elegant bridal look tips to make your next project easier and prettier with practical inspiration you can use right away and create a - Pin-934356253930197107.mp4';
-const STREET_STRUT_VIDEO_FILE = 'assets/b03803a60a90e705c3ac00e33bdb3500_t4.mp4';
+const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
+const BRIDAL_TIPS_VIDEO_FILE = 'assets/cat-elegant-steps.mp4';
+const STREET_STRUT_VIDEO_FILE = 'assets/cat-street-strut.mp4';
 
 /** Picked at random each time the break overlay opens. */
 const BREAK_MEOW_QUOTES = [
@@ -50,19 +49,19 @@ const BREAK_MEOW_QUOTES = [
 ];
 
 const ALLOWED_CAT_VIDEO_FILES = new Set([
-  'YTDown_YouTube_Sad-Cat-Meowing-Meme-Green-Screen-sadcat_Media_2ND0G6nIUKY_001_1080p.mp4',
-  'snaptik_7330929514878356741_v3.mp4',
-  'snaptik_7313952845961645314_v3.mp4',
-  'snaptik_7632449998856178965_v3.mp4',
-  'assets/From KlickPin CF Explore Budget-friendly journaling prompts that feel fresh practical and surprisingly easy to try for your next Pinterest save - Pin-1009861916434987310.mp4',
+  'cat-sad-meow.mp4',
+  'cat-playful.mp4',
+  'cat-curious.mp4',
+  'cat-chill.mp4',
+  'assets/cat-morning-paws.mp4',
   BRIDAL_TIPS_VIDEO_FILE,
-  'assets/From KlickPin CF Rustic Wedding Bouquet Ideas for 2026 - Pin-650981321193891957.mp4',
-  'assets/1fba07daca9d581992897b2cd098519a.mp4',
-  'assets/46a19be0b5bfdab4ca631bff5c4c59de_720w.mp4',
-  'assets/6b3a5a231ba53006350a2cf77c037c57_720w.mp4',
-  'assets/a98487b2ff946c18877c93fd2a3cfc63_720w.mp4',
+  'assets/cat-garden-stroll.mp4',
+  'assets/cat-alley-amble.mp4',
+  'assets/cat-window-watcher.mp4',
+  'assets/cat-curious-stroll.mp4',
+  'assets/cat-lazy-stretch.mp4',
   STREET_STRUT_VIDEO_FILE,
-  'assets/b2e0f2aa5d97ac9b310f4891fa21120a_720w.mp4'
+  'assets/cat-twilight-prowl.mp4'
 ]);
 
 function isExtensionContextValid() {
@@ -110,10 +109,7 @@ function safeSendResponse(sendResponse, data) {
 }
 
 function isStreetStrutVideo(videoFile) {
-  return (
-    typeof videoFile === 'string' &&
-    (videoFile === STREET_STRUT_VIDEO_FILE || videoFile.includes('b03803a60a90e705c3ac00e33bdb3500'))
-  );
+  return typeof videoFile === 'string' && videoFile === STREET_STRUT_VIDEO_FILE;
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
