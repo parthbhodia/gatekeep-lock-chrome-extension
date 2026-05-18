@@ -12,7 +12,7 @@
   "permissions": ["tabs", "storage", "alarms", "windows", "scripting"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src 'self' https://pozytitruvcthhfvpqic.supabase.co; connect-src 'self' https://pozytitruvcthhfvpqic.supabase.co;"
   },
   "background": {
     "service_worker": "background.js"
@@ -37,7 +37,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["*.mp4", "assets/*.mp4"],
+      "resources": ["icons/*"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

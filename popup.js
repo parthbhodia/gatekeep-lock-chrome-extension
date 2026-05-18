@@ -1,4 +1,8 @@
 const DEFAULT_VIDEO_FILE = 'cat-curious.mp4';
+const SUPABASE_BASE = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/public/cat-videos/';
+function getSupabaseUrl(file) {
+  return SUPABASE_BASE + file.replace(/^assets\//, '');
+}
 const LIMIT_CHIPS = [15, 30, 45, 60, 90];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
 const CAT_VIDEOS = [
@@ -351,7 +355,7 @@ function renderVideoGrid() {
   const grid = document.getElementById('cat-video-grid');
   grid.innerHTML = CAT_VIDEOS.map((video) => {
       const selected = !settings.randomCatVideo && video.file === settings.catVideoFile;
-    const src = chrome.runtime.getURL(video.file);
+    const src = getSupabaseUrl(video.file);
     return `
       <button class="video-card ${selected ? 'is-selected' : ''}" type="button" data-video="${video.file}">
         <video class="video-thumb" src="${src}" muted loop playsinline preload="metadata"></video>

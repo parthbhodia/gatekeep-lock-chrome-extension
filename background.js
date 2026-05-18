@@ -1,6 +1,52 @@
 // background.js — Cat Break service worker
 // Tracks active tab time per domain and triggers the cat when limits are hit.
 
+// ─── Supabase CDN ─────────────────────────────────────────────────────────────
+
+const SUPABASE_BASE = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/public/cat-videos/';
+const VIDEO_CACHE_NAME = 'cat-videos-v1';
+
+/** Converts an internal file key (e.g. 'assets/cat-curious.mp4') to its flat Supabase URL. */
+function getSupabaseUrl(file) {
+  return SUPABASE_BASE + file.replace(/^assets\//, '');
+}
+
+/** Download and cache all cat videos. Called on install/update. */
+async function cacheAllVideos() {
+  try {
+    // Purge any old cache versions first
+    const allKeys = await caches.keys();
+    await Promise.all(allKeys.filter((k) => k !== VIDEO_CACHE_NAME).map((k) => caches.delete(k)));
+
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    await Promise.all(
+      CAT_VIDEO_FILES_FOR_RANDOM.map(async (file) => {
+        const url = getSupabaseUrl(file);
+        try {
+          const res = await fetch(url);
+          if (res.ok) await cache.put(url, res);
+        } catch {
+          // Non-fatal — will be fetched on demand at display time
+        }
+      })
+    );
+  } catch {
+    // Cache API unavailable; videos will be fetched fresh on demand
+  }
+}
+
+/** Re-cache only if the cache is empty (e.g. after a browser data clear). */
+async function warmCacheIfEmpty() {
+  try {
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    const firstUrl = getSupabaseUrl(CAT_VIDEO_FILES_FOR_RANDOM[0]);
+    const hit = await cache.match(firstUrl);
+    if (!hit) await cacheAllVideos();
+  } catch {
+    // Ignore
+  }
+}
+
 let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
@@ -27,8 +73,17 @@ const CAT_VIDEO_FILES_FOR_RANDOM = [
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-chrome.runtime.onInstalled.addListener(init);
-chrome.runtime.onStartup.addListener(init);
+chrome.runtime.onInstalled.addListener(async (details) => {
+  await init();
+  // Re-download all videos on fresh install or version update
+  if (details.reason === 'install' || details.reason === 'update') {
+    cacheAllVideos();
+  }
+});
+chrome.runtime.onStartup.addListener(async () => {
+  await init();
+  warmCacheIfEmpty(); // Re-cache only if browser data was cleared
+});
 
 async function init() {
   const { settings } = await chrome.storage.local.get('settings');
@@ -519,6 +574,23 @@ async function handleMessage(msg) {
       // Clear snoozed gates so new limits/settings apply immediately.
       await chrome.storage.local.set({ settings: nextSettings, snoozed: {} });
       return { ok: true };
+    }
+    case 'GET_CAT_VIDEO': {
+      try {
+        const url = getSupabaseUrl(msg.file);
+        const cache = await caches.open(VIDEO_CACHE_NAME);
+        let res = await cache.match(url);
+        if (!res) {
+          // Cache miss — fetch from Supabase and store for next time
+          res = await fetch(url);
+          if (res.ok) await cache.put(url, res.clone());
+        }
+        if (!res?.ok) return { ok: false };
+        const buffer = await res.arrayBuffer();
+        return { ok: true, buffer };
+      } catch {
+        return { ok: false };
+      }
     }
     case 'TAB_MUTE_FOR_BREAK': {
       const tabId = sender.tab?.id;

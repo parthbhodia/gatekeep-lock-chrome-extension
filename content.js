@@ -201,7 +201,7 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   window.addEventListener('keydown', keydownHandler, true);
 
   try {
-    video.src = getCatVideoUrl(safeVideoFile);
+    video.src = await getCatVideoUrl(safeVideoFile);
     await video.play();
     setupCanvas(video, canvas, buffer);
     drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
@@ -322,13 +322,16 @@ function getSafeCatVideoFile(videoFile) {
   return ALLOWED_CAT_VIDEO_FILES.has(videoFile) ? videoFile : DEFAULT_CAT_VIDEO_FILE;
 }
 
-function getCatVideoUrl(videoFile) {
+async function getCatVideoUrl(videoFile) {
+  if (catVideoUrls.has(videoFile)) return catVideoUrls.get(videoFile);
   try {
     if (!isExtensionContextValid()) return '';
-    if (!catVideoUrls.has(videoFile)) {
-      catVideoUrls.set(videoFile, chrome.runtime.getURL(videoFile));
-    }
-    return catVideoUrls.get(videoFile);
+    const res = await sendRuntimeMessageAsync({ type: 'GET_CAT_VIDEO', file: videoFile });
+    if (!res?.ok || !res.buffer) return '';
+    const blob = new Blob([res.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    catVideoUrls.set(videoFile, url); // cache blob URL for reuse
+    return url;
   } catch {
     return '';
   }
