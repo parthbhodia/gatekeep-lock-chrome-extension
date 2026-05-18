@@ -23,6 +23,19 @@
   pointer-events: none;
 }
 
+#fcb-overlay.fcb-out .fcb-timer,
+#fcb-overlay.fcb-out .fcb-backdrop,
+#fcb-overlay.fcb-out .fcb-cat-stage,
+#fcb-overlay.fcb-out .fcb-card {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#fcb-overlay.fcb-out .fcb-cat-canvas,
+#fcb-overlay.fcb-out .fcb-source-video {
+  animation: none !important;
+}
+
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 
 .fcb-backdrop {
@@ -43,13 +56,15 @@
   pointer-events: none;
 }
 
-/* ── Cat ───────────────────────────────────────────────────────────────────── */
-
 .fcb-cat-wrap {
   position: relative;
   width: min(52vw, 620px);
   transform: translate(-150px, 34px);
   transform-origin: 50% 100%;
+}
+
+#fcb-overlay.fcb-cat-nudge-right .fcb-cat-wrap {
+  transform: translate(-72px, 34px);
 }
 
 .fcb-cat-canvas {
@@ -105,11 +120,13 @@
 /* ── Speech card ───────────────────────────────────────────────────────────── */
 
 .fcb-card {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 16px 18px;
-  box-shadow: 0 8px 36px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
-  border: 3px solid #F5A055;
+  background: linear-gradient(165deg, #fffdf9 0%, #ffffff 50%, #fff6ef 100%);
+  border-radius: 20px;
+  padding: 17px 18px 18px;
+  box-shadow:
+    0 14px 44px rgba(255, 107, 74, 0.14),
+    0 4px 16px rgba(42, 36, 56, 0.12);
+  border: 2px solid rgba(255, 155, 120, 0.65);
   position: fixed;
   right: 22px;
   bottom: 18px;
@@ -120,6 +137,17 @@
   transform: translateY(28px) scale(0.94);
   opacity: 0;
   animation: fcb-card-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+}
+
+.fcb-card::before {
+  content: "🐾";
+  position: absolute;
+  top: -11px;
+  left: 16px;
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+  pointer-events: none;
 }
 
 @keyframes fcb-card-pop {
@@ -139,20 +167,20 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border: none;
   border-radius: 999px;
-  background: #f1f2f8;
-  color: #6f7287;
+  background: #fff3eb;
+  color: #c45d48;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
 
 .fcb-card-close:hover {
-  background: #e7e9f3;
-  color: #3f4258;
+  background: #ffe4d4;
+  color: #9a3d2e;
 }
 
 .fcb-timer {
@@ -191,22 +219,31 @@
 /* ── Typography ────────────────────────────────────────────────────────────── */
 
 .fcb-title {
-  font-size: 17px !important;
+  font-size: 16px !important;
   font-weight: 800 !important;
-  color: #1a1a2e !important;
-  margin: 0 0 8px !important;
-  line-height: 1.2 !important;
+  color: #3d3550 !important;
+  margin: 0 0 10px !important;
+  line-height: 1.35 !important;
+  font-style: italic !important;
 }
 
 .fcb-body {
   font-size: 13px !important;
-  color: #555 !important;
+  color: #5c5466 !important;
   margin: 0 !important;
-  line-height: 1.5 !important;
+  line-height: 1.55 !important;
+  font-weight: 600 !important;
 }
 
 .fcb-body strong {
-  color: #E07030 !important;
-  font-weight: 700 !important;
+  color: #ff6b54 !important;
+  font-weight: 800 !important;
+}
+
+.fcb-body.fcb-body-limit {
+  margin-top: 10px !important;
+  font-size: 12px !important;
+  color: #8b8394 !important;
+  font-weight: 600 !important;
 }
 

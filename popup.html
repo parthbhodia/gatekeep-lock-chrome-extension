@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Cat Break</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="app-shell">
     <div class="header">
-      <span class="logo">🐱</span>
+      <div class="header-logo-wrap" aria-hidden="true">
+        <span class="logo">🐱</span>
+        <span class="logo-ring"></span>
+      </div>
       <div class="header-text">
         <h1>Take a Break</h1>
-        <p>Healthy browsing, one cat at a time</p>
+        <p>Soft nudges from your break cat</p>
       </div>
       <label class="toggle" title="Enable / disable">
         <input type="checkbox" id="enabled-toggle" checked>
@@ -20,16 +26,56 @@
     </div>
 
     <div class="tabs" role="tablist" aria-label="Popup sections">
-      <button class="tab-btn is-active" data-tab="settings" role="tab" type="button">Settings</button>
-      <button class="tab-btn" data-tab="today" role="tab" type="button">Stats</button>
-      <button class="tab-btn" data-tab="cat" role="tab" type="button">Cat</button>
+      <button class="tab-btn is-active" data-tab="cat" role="tab" type="button" aria-selected="true"><span class="tab-ico" aria-hidden="true">🐾</span> Cat</button>
+      <button class="tab-btn" data-tab="settings" role="tab" type="button" aria-selected="false"><span class="tab-ico" aria-hidden="true">⚙</span> Settings</button>
+      <button type="button" class="tour-replay-btn" id="tour-replay" title="Walk through Cat Break features">Tour</button>
     </div>
 
     <div class="save-indicator" id="save-indicator">Ready</div>
 
-    <section class="tab-panel is-active" data-panel="settings">
+    <section class="tab-panel is-active" data-panel="cat">
+      <div class="section" id="tour-anchor-default-limit">
+        <span class="label">Default time limit <span class="info" aria-label="What this number does" data-tooltip="How many minutes on a site before the cat visits. Need different limits per site—or sites we should ignore? That’s all in Settings."></span></span>
+        <div class="chip-row" id="default-limit-chips-cat"></div>
+        <div class="custom-row">
+          <input type="number" id="default-limit-cat" placeholder="min" min="1" max="600" class="num-input">
+          <span class="unit">minutes (custom)</span>
+        </div>
+      </div>
+
       <div class="section">
-        <span class="label">Default time limit <span class="info" title="Applies when no site-specific limit is set."></span></span>
+        <span class="label">Cat auto-dismiss <span class="info" aria-label="Help: auto-dismiss timer" data-tooltip="How long the break cat stays on screen before it closes by itself. You can still close it sooner with Shoo or Esc."></span></span>
+        <div class="chip-row" id="cat-linger-chips"></div>
+        <div class="custom-row">
+          <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
+          <span class="unit">minutes (custom)</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="toggle-row">
+          <span class="toggle-row-label">Random cat <span class="info" aria-label="Help: random cat" data-tooltip="Picks a different cat from the gallery each time you hit your limit. Off: always uses the video you choose below."></span></span>
+          <label class="toggle toggle-inline" for="random-cat-toggle">
+            <input type="checkbox" id="random-cat-toggle">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <span class="label label-after-option">Cat video</span>
+        <div id="cat-video-grid" class="cat-video-grid"></div>
+        <input type="hidden" id="cat-video">
+      </div>
+
+      <div class="section">
+        <span class="label">Preview</span>
+        <button id="preview-cat-btn" type="button" class="preview-cat-btn" title="See how your break reminder looks on the current tab. Your timer is not changed.">Preview on this tab</button>
+        <button id="shoo-cat-btn" type="button" class="shoo-cat-btn is-hidden" title="Remove the break cat from this tab">Shoo the cat away</button>
+        <p id="preview-msg" class="preview-msg"></p>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="settings">
+      <div class="section">
+        <span class="label">Default time limit <span class="info" aria-label="What this number does" data-tooltip="Your usual minutes-before-the-cat for most sites. Pick special cases in Limit by site below, or never track sites under Excluded."></span></span>
         <div class="chip-row" id="default-limit-chips"></div>
         <div class="custom-row">
           <input type="number" id="default-limit" placeholder="min" min="1" max="600" class="num-input">
@@ -37,8 +83,16 @@
         </div>
       </div>
 
-      <div class="section">
-        <span class="label">Limit by site <span class="info" title="Overrides the default for specific sites."></span></span>
+      <div class="section" id="tour-anchor-listed-only">
+        <label class="option-row" for="tracked-sites-only">
+          <input type="checkbox" id="tracked-sites-only" class="option-checkbox">
+          <span class="option-row-text">Only limit sites on the list below</span>
+          <span class="info" role="img" aria-label="Help: only listed sites" data-tooltip="Timer and break cat only for sites on Limit by site. Everywhere else: no tracking. Off: default limit applies to all non-excluded sites."></span>
+        </label>
+      </div>
+
+      <div class="section" id="tour-anchor-limit-by-site">
+        <span class="label">Limit by site <span class="info" aria-label="Help: per-site limits" data-tooltip="Custom minutes per site; overrides the default. With “only listed sites” on, only these domains are timed."></span></span>
         <div id="site-limits" class="site-limits"></div>
         <div class="chip-row" id="per-site-chips"></div>
         <div class="add-row">
@@ -48,8 +102,8 @@
         </div>
       </div>
 
-      <div class="section">
-        <span class="label">Excluded sites <span class="info" title="These sites are not tracked or blocked."></span></span>
+      <div class="section" id="tour-anchor-excluded">
+        <span class="label">Excluded sites <span class="info" aria-label="Help: excluded sites" data-tooltip="These sites are not tracked or blocked."></span></span>
         <div id="excluded-sites" class="site-limits"></div>
         <div class="add-row">
           <input type="text" id="exclude-domain" placeholder="example.com" class="site-input">
@@ -59,10 +113,11 @@
 
       <div class="section is-hidden" id="quick-action-section">
         <span class="label">Quick action</span>
-        <button id="shoo-cat-btn-settings" class="shoo-cat-btn is-hidden">Shoo cat away</button>
+        <button id="shoo-cat-btn-settings" type="button" class="shoo-cat-btn is-hidden" title="Remove the break cat from this tab">Shoo the cat away</button>
       </div>
     </section>
 
+    <!-- Stats panel hidden for now
     <section class="tab-panel" data-panel="today">
       <div class="section">
         <div class="section-header">
@@ -74,34 +129,24 @@
         </div>
       </div>
     </section>
-
-    <section class="tab-panel" data-panel="cat">
-      <div class="section">
-        <span class="label">Cat linger duration <span class="info" title="How long the overlay stays before auto-dismiss."></span></span>
-        <div class="chip-row" id="cat-linger-chips"></div>
-        <div class="custom-row">
-          <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
-          <span class="unit">minutes (custom)</span>
-        </div>
-      </div>
-
-      <div class="section">
-        <span class="label">Cat video</span>
-        <div id="cat-video-grid" class="cat-video-grid"></div>
-        <input type="hidden" id="cat-video">
-      </div>
-
-      <div class="section">
-        <span class="label">Preview</span>
-        <button id="preview-cat-btn" class="preview-cat-btn">Show walking cat now</button>
-        <button id="shoo-cat-btn" class="shoo-cat-btn is-hidden">Shoo cat away</button>
-        <p id="preview-msg" class="preview-msg"></p>
-      </div>
-    </section>
+    -->
     <div class="review-banner" id="review-banner">
       <span>🐾 Enjoying Cat Break?</span>
       <a id="review-link" class="review-link" target="_blank" rel="noopener">Leave a review ★</a>
       <button class="review-dismiss" id="review-dismiss" title="Dismiss">✕</button>
+    </div>
+  </div>
+  <div id="tour-overlay" class="tour-overlay is-hidden" aria-hidden="true">
+    <div id="tour-scrim" class="tour-scrim" aria-hidden="true"></div>
+    <div class="tour-modal" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <div class="tour-sparkle" aria-hidden="true">✨🐱✨</div>
+      <h2 id="tour-title" class="tour-title">Welcome</h2>
+      <p id="tour-body" class="tour-body"></p>
+      <div id="tour-dots" class="tour-dots" aria-hidden="true"></div>
+      <div class="tour-actions">
+        <button type="button" class="tour-skip" id="tour-skip">Skip tour</button>
+        <button type="button" class="tour-next" id="tour-next">Next</button>
+      </div>
     </div>
   </div>
   <div id="toast" class="toast" aria-live="polite"></div>

@@ -1,49 +1,45 @@
 # Cat Break
 
-> A free Chrome extension that limits time on websites by showing a cat video overlay when your limit is exceeded.
+> Free Chrome extension: when you’ve been on a site too long, a cat walks on-screen and invites you to take a break.
 
 ## What it is
 
-Cat Break is a screen-time management Chrome extension for people who want to spend less time on social media and distracting websites. When a user exceeds their configured time limit on a site, a cat video plays as a full-screen overlay — hard to ignore, but not punishing.
+Cat Break tracks **active tab time per website** and shows a **full-screen cat video** when a limit is reached — memorable, not a tiny notification. The break **auto-dismisses** after a time you choose; you can also **preview** it or **shoo** it away.
 
-- Free, no account required, no ads
-- Available on the Chrome Web Store
-- All data is local (chrome.storage); nothing is transmitted externally
+- Free, no account, no ads; data stays local (`chrome.storage`)
+- **Cat** tab: default limit, auto-dismiss, **random cat** toggle, video gallery, preview
+- **Settings** tab: **limit by site**, **excluded sites**, optional **only track listed sites** mode
+- Overlay includes **rotating playful messages**; tries to **pause videos** (incl. common shadow-DOM players); may **mute the tab** on YouTube if pause isn’t possible
+- Daily totals **reset at midnight**
 
-## Who it's for
+## Who it’s for
 
-- People who lose track of time on YouTube, Instagram, TikTok, X (Twitter), or Reddit
-- Anyone who wants a passive, low-friction screen-time nudge without hard blocking
-- Users who find notification-based tools too easy to dismiss
+People who lose track of time on social/video sites and want a **soft brake**, not a hard block.
 
 ## How it works
 
-1. User sets a default time limit (e.g., 30 minutes) for all sites
-2. Optionally sets per-site overrides (e.g., youtube.com → 15 minutes)
-3. Cat Break tracks active tab time — only while the tab is focused
-4. When the limit is hit, a cat video appears on the page
-5. The overlay auto-dismisses after a configurable linger time (default: 2 minutes)
-6. Daily totals reset at midnight
+1. Set a **default** minutes-before-cat (chips + custom).
+2. Optionally add **per-site** limits, **exclusions**, or **list-only** tracking.
+3. Timer runs **only while the tab is focused**.
+4. At limit → cat overlay → clears after **auto-dismiss** (or user dismisses / shoo).
 
 ## Key features
 
-- Default time limit (applies to all sites)
-- Per-site limit overrides
-- Excluded sites list (never tracked)
-- Cat linger duration setting
-- Choice of 4 cat videos
-- Daily usage stats per site
-- Privacy-first: zero data collection
+- Default + per-site limits, exclusions, list-only mode
+- **Random cat** or fixed **cat video** from a growing gallery
+- **Auto-dismiss** (break length) configurable
+- **Preview on current tab**
+- Privacy-first: no external collection (see PRIVACY.md)
 
 ## Links
 
 - Chrome Web Store: https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh
 - Privacy policy: https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md
-- Source code: https://github.com/parthbhodia/gatekeep-lock-chrome-extension
+- Source: https://github.com/parthbhodia/gatekeep-lock-chrome-extension
 
 ## Pricing
 
-Free. No tiers, no subscription, no ads.
+Free.
 
 ## Contact
 
