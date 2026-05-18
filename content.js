@@ -20,7 +20,7 @@ let keydownHandler = null;
 const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
-const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
+const DEFAULT_CAT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const BRIDAL_TIPS_VIDEO_FILE = 'cat-elegant-steps.mp4';
 const STREET_STRUT_VIDEO_FILE = 'cat-street-strut.mp4';
 

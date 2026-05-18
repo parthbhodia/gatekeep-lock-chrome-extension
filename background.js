@@ -136,7 +136,7 @@ let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
 let activeDomain = null;
-const DEFAULT_CAT_VIDEO_FILE = 'cat-curious.mp4';
+const DEFAULT_CAT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const TRACKING_STATE_KEY = 'trackingState';
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -651,7 +651,18 @@ async function handleMessage(msg) {
           res = await fetch(url);
           if (res.ok) await cache.put(url, res.clone());
         }
-        if (!res?.ok) return { ok: false };
+        if (!res?.ok) {
+          // Requested file not available — fall back to any cached video
+          const keys = await cache.keys();
+          for (const req of keys) {
+            const fallback = await cache.match(req);
+            if (fallback?.ok) {
+              const buffer = await fallback.arrayBuffer();
+              return { ok: true, buffer };
+            }
+          }
+          return { ok: false };
+        }
         const buffer = await res.arrayBuffer();
         return { ok: true, buffer };
       } catch {
