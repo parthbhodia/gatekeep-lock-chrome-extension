@@ -40,42 +40,30 @@ let tourStepIndex = 0;
 const TOUR_STEPS = [
   {
     tab: 'cat',
-    title: 'Welcome',
-    body: 'Four stops: default time, listed-only mode, site list, exclusions. Next shows each control.',
-    targetSelector: null
-  },
-  {
-    tab: 'cat',
-    title: 'Default time limit',
-    body: 'Minutes on a site before the cat. Chips or type a number.',
+    title: 'Time limit',
+    body: 'How many minutes before the cat shows up. Pick a quick option or type any number — this applies to every site unless you set a custom one.',
     targetSelector: '#tour-anchor-default-limit'
   },
   {
     tab: 'settings',
     title: 'Only listed sites',
-    body: 'On: only domains in your list get timed. All others stay off the clock.',
+    body: 'Turn this on to track only the sites on your list. Everywhere else gets a free pass.',
     targetSelector: '#tour-anchor-listed-only'
   },
   {
     tab: 'settings',
-    title: 'Site list',
-    body: 'Domain + minutes, then Add—e.g. social sites with their own limits.',
+    title: 'Limit by site',
+    body: 'Give a specific site its own time limit — great for social media. Type a domain and minutes, then hit Add.',
     targetSelector: '#tour-anchor-limit-by-site',
     tourModalPlacement: 'top'
   },
   {
     tab: 'settings',
-    title: 'Excluded',
-    body: 'Never timed here—no cat on these sites.',
+    title: 'Excluded sites',
+    body: 'The cat never visits these. Add any site you never want timed or interrupted.',
     targetSelector: '#tour-anchor-excluded',
     tourModalPlacement: 'top',
     tourScrollBlock: 'end'
-  },
-  {
-    tab: 'settings',
-    title: 'Done',
-    body: 'Change anytime. Tour in the tab bar replays this.',
-    targetSelector: null
   }
 ];
 
