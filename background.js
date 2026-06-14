@@ -330,12 +330,14 @@ async function flush() {
     'settings'
   ]);
 
-  // Daily reset
+  // Daily reset — clear yesterday's tallies, but keep the segment we just
+  // measured so the active site isn't shorted the first minute after midnight.
   const today = new Date().toDateString();
   if (lastReset !== today) {
+    Object.keys(siteTime).forEach((key) => delete siteTime[key]);
     await chrome.storage.local.set({ siteTime: {}, snoozed: {}, lastReset: today });
-    segmentStart = Date.now();
-    return;
+    // Fall through: the guards and accumulation below now credit `elapsed`
+    // to today's fresh tally (subject to the same exclusion / tracked rules).
   }
 
   // Skip tracking excluded sites entirely

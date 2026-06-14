@@ -238,10 +238,11 @@ function renderStats() {
     const limit = getDomainLimitMs(domain);
     const over = limit > 0 && ms >= limit;
     const pct = Math.min(100, (ms / Math.max(maxMs, 1)) * 100);
+    const safeDomain = escapeHTML(domain);
     return `
       <div class="stat-item">
         <div class="stat-row">
-          <span class="stat-domain" title="${domain}">${domain}</span>
+          <span class="stat-domain" title="${safeDomain}">${safeDomain}</span>
           <span class="stat-time ${over ? 'over' : ''}">${fmtMs(ms)}${over ? ' ⚠' : ''}</span>
         </div>
         <div class="stat-bar"><div class="stat-fill ${over ? 'over' : ''}" style="width:${pct}%"></div></div>
@@ -298,10 +299,10 @@ function renderSiteLimits() {
       .map(
         ([domain, ms]) => `
     <div class="site-item">
-      <span class="site-item-domain" title="${domain}">${domain}</span>
+      <span class="site-item-domain" title="${escapeHTML(domain)}">${escapeHTML(domain)}</span>
       <span class="site-item-limit">${Math.round(ms / 60000)}m</span>
-      <span class="site-item-cats" title="${catTitle}">${catLabel}</span>
-      <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
+      <span class="site-item-cats" title="${escapeHTML(catTitle)}">${escapeHTML(catLabel)}</span>
+      <button class="site-item-rm" data-d="${escapeHTML(domain)}" type="button" title="Remove">✕</button>
     </div>`
       )
       .join('')}`;
@@ -337,10 +338,10 @@ function renderExcludedSites() {
       .map(
         (domain) => `
     <div class="site-item">
-      <span class="site-item-domain" title="${domain}">${domain}</span>
+      <span class="site-item-domain" title="${escapeHTML(domain)}">${escapeHTML(domain)}</span>
       <span class="site-item-limit" style="color:#2f995f">Excluded</span>
-      <span class="site-item-cats" title="${exCatTitle}">—</span>
-      <button class="site-item-rm" data-d="${domain}" type="button" title="Remove">✕</button>
+      <span class="site-item-cats" title="${escapeHTML(exCatTitle)}">—</span>
+      <button class="site-item-rm" data-d="${escapeHTML(domain)}" type="button" title="Remove">✕</button>
     </div>`
       )
       .join('')}`;
@@ -771,6 +772,16 @@ function cleanDomain(raw) {
   const withoutProto = trimmed.replace(/^https?:\/\//, '').replace(/^www\./, '');
   const domain = withoutProto.replace(/\/.*$/, '');
   return isValidDomain(domain) ? domain : '';
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[char]));
 }
 
 function initReviewBanner() {
