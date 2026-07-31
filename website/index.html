@@ -33,6 +33,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 
+<!-- Google Analytics (GA4). This measures traffic to catbreak.com ONLY.
+     The extension itself still sends nothing anywhere — see privacy.html. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGHY3T64Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-SFGHY3T64Y');
+</script>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -75,7 +85,7 @@
     {
       "@type": "Question",
       "name": "What data does Cat Break collect?",
-      "acceptedAnswer": { "@type": "Answer", "text": "None. Settings and daily totals live in chrome.storage on your own machine. There is no server, no analytics, and no sync. The only thing your browser fetches is the cat video itself." }
+      "acceptedAnswer": { "@type": "Answer", "text": "The extension collects nothing. Settings and daily totals live in chrome.storage on your own machine, with no server, no account, no sync and no analytics. The only thing it fetches is the cat video itself. The catbreak.com website is separate and uses Google Analytics to count visits; that applies to the marketing site only and never to your browsing inside the extension." }
     },
     {
       "@type": "Question",
@@ -177,7 +187,7 @@
       <ul class="trust reveal" style="--d:300ms">
         <li>No account</li>
         <li>No ads</li>
-        <li>Nothing leaves your device</li>
+        <li>Your browsing never leaves your device</li>
         <li>Open source</li>
       </ul>
     </div>
@@ -447,7 +457,8 @@
       </details>
       <details>
         <summary>What data do you collect?</summary>
-        <p>None. Settings and daily totals live in <code>chrome.storage</code> on your own machine. There’s no server, no analytics, and no sync. The only thing your browser fetches from us is the cat video itself.</p>
+        <p><strong>The extension collects nothing.</strong> Settings and daily totals live in <code>chrome.storage</code> on your own machine — no server, no account, no sync, no analytics. The only thing it fetches is the cat video itself.</p>
+        <p><strong>This website is separate.</strong> catbreak.com uses Google Analytics to count visits and see which pages people read. That’s the marketing site only — it has no connection to the extension, which never reports your browsing anywhere. Details in the <a href="privacy.html">privacy policy</a>.</p>
       </details>
       <details>
         <summary>Does it work on every site?</summary>
@@ -501,7 +512,8 @@
     <nav class="footer-links" aria-label="Footer">
       <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
       <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
-      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
       <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">Contact</a>
     </nav>
     <p class="footer-legal">© <span id="year">2026</span> catbreak.com · Made for people who meant to close the tab.</p>

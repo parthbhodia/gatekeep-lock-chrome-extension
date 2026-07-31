@@ -676,6 +676,50 @@ h1 em {
 .footer-links a:hover { color: var(--coral-deep); }
 .footer-legal { width: 100%; font-size: .84rem; color: var(--muted); }
 
+/* ── Legal pages (privacy, terms) ────────────────────────────────────────── */
+
+.legal {
+  max-width: 760px;
+  padding: clamp(40px, 6vw, 72px) 0 clamp(50px, 7vw, 90px);
+}
+.legal h1 { font-size: clamp(2.2rem, 5vw, 3.1rem); margin-bottom: 10px; }
+.legal-meta { color: var(--muted); font-size: .9rem; font-weight: 700; margin-bottom: 32px; }
+
+.legal-callout {
+  background: linear-gradient(150deg, #fff 0%, var(--lilac-soft) 100%);
+  border-radius: var(--r-lg);
+  padding: 26px 28px;
+  box-shadow: var(--shadow-soft), 0 0 0 2px var(--card-edge);
+  margin-bottom: 40px;
+}
+.legal-callout p { color: var(--ink); font-size: 1rem; margin: 0; }
+
+.legal h2 {
+  font-size: clamp(1.3rem, 2.4vw, 1.6rem);
+  margin: 40px 0 14px;
+  padding-top: 22px;
+  border-top: 1px dashed var(--card-edge);
+}
+.legal h3 { font-size: 1.1rem; margin: 26px 0 10px; }
+.legal p { color: var(--ink-soft); margin-bottom: 14px; font-size: 1rem; }
+.legal ul { margin: 0 0 16px 0; padding-left: 0; list-style: none; }
+.legal li {
+  position: relative; padding-left: 26px; margin-bottom: 10px;
+  color: var(--ink-soft); font-size: 1rem;
+}
+.legal li::before {
+  content: "🐾"; position: absolute; left: 0; top: 1px; font-size: .82rem;
+}
+.legal a { color: var(--coral-deep); text-decoration: underline; text-underline-offset: 2px; }
+.legal a:hover { color: var(--ink); }
+.legal strong { color: var(--ink); }
+
+.legal-back {
+  margin-top: 44px; padding-top: 26px;
+  border-top: 1px dashed var(--card-edge);
+  font-weight: 700;
+}
+
 /* ── Live demo overlay ───────────────────────────────────────────────────── */
 
 .demo {

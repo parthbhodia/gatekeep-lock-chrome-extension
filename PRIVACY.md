@@ -1,11 +1,15 @@
 # Privacy Policy
 
-Last updated: 2026-06-14
+Last updated: 2026-07-31
+
+This policy covers the **Cat Break browser extension**. The catbreak.com marketing
+website is covered separately at https://www.catbreak.com/privacy.html — unlike the
+extension, that website does use Google Analytics to count visits.
 
 ## Summary
 - We do not collect, sell, or transmit personal data.
 - Your settings and usage data stay on your device and are removed when you uninstall the extension or clear its storage.
-- No analytics or tracking of any kind.
+- No analytics or tracking of any kind **in the extension**.
 - Cat videos are loaded and cached from our Supabase storage CDN; no executable code is fetched remotely.
 
 ## Data we access

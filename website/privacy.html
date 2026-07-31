@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Cat Break</title>
+<meta name="description" content="What Cat Break does and does not collect. The extension stores everything locally and reports nothing. The catbreak.com website uses Google Analytics." />
+<link rel="canonical" href="https://www.catbreak.com/privacy.html" />
+<meta name="robots" content="index, follow" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.catbreak.com/privacy.html" />
+<meta property="og:site_name" content="Cat Break" />
+<meta property="og:title" content="Privacy Policy — Cat Break" />
+<meta property="og:description" content="The extension stores everything locally and reports nothing. The website uses Google Analytics." />
+<meta property="og:image" content="https://www.catbreak.com/og.jpg" />
+
+<link rel="icon" href="icons/icon-32.png" sizes="32x32" />
+<link rel="icon" href="icons/icon-128.png" sizes="128x128" />
+<link rel="apple-touch-icon" href="icons/icon-128.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGHY3T64Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-SFGHY3T64Y');
+</script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="/">
+      <img src="icons/icon-48.png" alt="" width="34" height="34" />
+      <span>Cat&nbsp;Break</span>
+    </a>
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+      Add to Chrome
+    </a>
+  </div>
+</header>
+
+<main class="shell legal">
+  <p class="kicker">Legal</p>
+  <h1>Privacy Policy</h1>
+  <p class="legal-meta">Last updated 31 July 2026</p>
+
+  <div class="legal-callout">
+    <p><strong>The short version.</strong> The Cat Break extension collects nothing about you — your settings and time totals never leave your browser. This website, catbreak.com, is a separate thing: it uses Google Analytics to count visits. Those two are unrelated, and the website's analytics can never see what you browse.</p>
+  </div>
+
+  <h2>1. The extension</h2>
+
+  <h3>What it stores</h3>
+  <p>Everything the extension knows lives in <code>chrome.storage</code> on your own device:</p>
+  <ul>
+    <li>Your settings — default time limit, per-site limits, excluded sites, auto-dismiss duration, chosen cat, and whether random cat is on.</li>
+    <li>Per-site time totals for the current day, plus the last reset date.</li>
+    <li>Temporary snooze flags.</li>
+  </ul>
+  <p>This data is never transmitted to us or anyone else. There is no account, no server, no sync, and no analytics inside the extension. Uninstalling it, or clearing its storage, removes all of it.</p>
+
+  <h3>What it accesses while running</h3>
+  <ul>
+    <li>The domain of your active tab and how long it has been focused, in order to enforce your limits.</li>
+    <li>Permissions used: <code>tabs</code>, <code>storage</code>, <code>alarms</code>, <code>windows</code>, <code>scripting</code>, and host access to <code>http://*/*</code> and <code>https://*/*</code> so the overlay can appear on the sites you choose to limit.</li>
+  </ul>
+  <p>Your browsing history is read only in memory, to decide whether a limit has been reached. It is not stored beyond the daily per-site totals described above, and it is not transmitted.</p>
+
+  <h3>The one network request it makes</h3>
+  <p>Cat videos are fetched and cached from our Supabase storage bucket (<code>pozytitruvcthhfvpqic.supabase.co</code>). As with loading any image or video on the web, this exposes standard request metadata such as your IP address to Supabase. The request contains only the filename of the video being downloaded — no browsing history, no site names, no usage times, no identifiers.</p>
+  <p>All extension code is bundled with the extension. No executable code is fetched or run remotely; only media assets are loaded at runtime, over HTTPS.</p>
+
+  <h2>2. This website</h2>
+
+  <h3>Google Analytics</h3>
+  <p>catbreak.com uses Google Analytics 4 (measurement ID <code>G-SFGHY3T64Y</code>) so we can see how many people visit and which pages they read. It sets cookies in your browser and collects the usual analytics data: pages viewed, approximate location derived from IP, referring site, device type, and browser. Google Analytics 4 does not log full IP addresses.</p>
+  <p>We use this only to understand traffic to the site. We do not sell it, and we do not use it to build advertising profiles. Google processes this data as described in <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</p>
+  <p><strong>To opt out:</strong> install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's opt-out browser add-on</a>, enable your browser's tracking protection, or block <code>googletagmanager.com</code>. Blocking it has no effect on the extension, which does not use analytics at all.</p>
+
+  <h3>Fonts and hosting</h3>
+  <p>The site loads fonts from Google Fonts and is hosted on Vercel. Both receive your IP address as a normal consequence of serving the page.</p>
+
+  <h2>3. What we never do</h2>
+  <ul>
+    <li>We do not sell personal data.</li>
+    <li>We do not use your browsing history for advertising.</li>
+    <li>We do not transmit anything the extension records about your browsing.</li>
+    <li>We do not require an account, so we hold no email address, password, or profile.</li>
+  </ul>
+
+  <h2>4. Children</h2>
+  <p>Cat Break is not directed at children under 13, and we do not knowingly collect personal data from them.</p>
+
+  <h2>5. Changes</h2>
+  <p>If this policy changes materially, the date at the top will change with it. The history of this file is public in the <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">GitHub repository</a>, so you can see exactly what changed and when.</p>
+
+  <h2>6. Contact</h2>
+  <p>Email <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break%20privacy">parthbhodia08@gmail.com</a> with "Cat Break" in the subject line.</p>
+
+  <p class="legal-back"><a href="/">← Back to catbreak.com</a></p>
+</main>
+
+<footer class="footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <img src="icons/icon-48.png" alt="" width="30" height="30" />
+      <span>Cat Break</span>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">Contact</a>
+    </nav>
+    <p class="footer-legal">© <span id="year">2026</span> catbreak.com · Made for people who meant to close the tab.</p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = String(new Date().getFullYear());</script>
+</body>
+</html>

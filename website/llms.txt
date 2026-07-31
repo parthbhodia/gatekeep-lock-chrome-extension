@@ -47,10 +47,16 @@ Stroll, Twilight Prowl, Lazy Stretch, Curious Stroll, Elegant Steps, Alley Amble
 
 ## Privacy
 
-No analytics, no account, no sync, no server. Settings and daily totals stay in
-`chrome.storage` on the user's own device. The only network request the extension
-makes is fetching the cat video itself.
-Policy: https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md
+**The extension** collects nothing: no analytics, no account, no sync, no server.
+Settings and daily totals stay in `chrome.storage` on the user's own device. The
+only network request it makes is fetching the cat video itself.
+
+**The catbreak.com website** is separate and uses Google Analytics to count
+visits. That applies to the marketing site only — it has no access to anything
+the extension sees.
+
+Policy: https://www.catbreak.com/privacy.html
+Terms: https://www.catbreak.com/terms.html
 
 ## Who it is for
 
