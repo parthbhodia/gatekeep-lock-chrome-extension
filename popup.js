@@ -1,4 +1,4 @@
-const DEFAULT_VIDEO_FILE = 'cat-curious.mp4';
+const DEFAULT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const SUPABASE_BASE = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/object/public/cat-videos/';
 
 /** Strip legacy assets/ prefix so keys are always flat. */
@@ -109,9 +109,8 @@ async function load() {
   if (catVideos.length === 0) {
     // Hard fallback — mirrors DEFAULT_CAT_VIDEO_FILES in background.js
     catVideos = [
-      'cat-alley-amble.mp4','cat-chill.mp4','cat-curious.mp4','cat-curious-stroll.mp4',
-      'cat-elegant-steps.mp4','cat-garden-stroll.mp4','cat-lazy-stretch.mp4',
-      'cat-morning-paws.mp4','cat-playful.mp4','cat-sad-meow.mp4',
+      'cat-alley-amble.mp4','cat-curious-stroll.mp4','cat-elegant-steps.mp4',
+      'cat-garden-stroll.mp4','cat-lazy-stretch.mp4','cat-morning-paws.mp4',
       'cat-street-strut.mp4','cat-twilight-prowl.mp4','cat-window-watcher.mp4'
     ].map((f) => ({ file: f, label: fileToLabel(f) }));
   }

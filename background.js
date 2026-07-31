@@ -9,7 +9,7 @@ const SUPABASE_LIST_URL = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/o
 const SUPABASE_ANON_KEY = 'sb_publishable__RWZ07cSXRVJsMRnNoUjww_rGfM1dB6';
 const VIDEO_CACHE_NAME = 'cat-videos-v1';
 
-/** Strip legacy assets/ prefix so all file keys are flat (e.g. 'cat-curious.mp4'). */
+/** Strip legacy assets/ prefix so all file keys are flat (e.g. 'cat-curious-stroll.mp4'). */
 function normalizeVideoFile(file) {
   return (file || '').replace(/^assets\//, '');
 }
@@ -26,15 +26,11 @@ function getSupabaseUrl(file) {
  */
 const DEFAULT_CAT_VIDEO_FILES = [
   'cat-alley-amble.mp4',
-  'cat-chill.mp4',
-  'cat-curious.mp4',
   'cat-curious-stroll.mp4',
   'cat-elegant-steps.mp4',
   'cat-garden-stroll.mp4',
   'cat-lazy-stretch.mp4',
   'cat-morning-paws.mp4',
-  'cat-playful.mp4',
-  'cat-sad-meow.mp4',
   'cat-street-strut.mp4',
   'cat-twilight-prowl.mp4',
   'cat-window-watcher.mp4'
