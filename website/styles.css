@@ -676,6 +676,45 @@ h1 em {
 .footer-links a:hover { color: var(--coral-deep); }
 .footer-legal { width: 100%; font-size: .84rem; color: var(--muted); }
 
+/* ── Cookie consent ──────────────────────────────────────────────────────── */
+
+.cookie {
+  position: fixed;
+  left: 20px; bottom: 20px; z-index: 900;
+  width: min(calc(100vw - 40px), 400px);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-deep), 0 0 0 1px var(--card-edge);
+  opacity: 0;
+  transform: translateY(16px) scale(.98);
+  transition: opacity .3s ease, transform .3s cubic-bezier(.34,1.4,.64,1);
+}
+.cookie.is-in { opacity: 1; transform: none; }
+
+.cookie-title {
+  font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+.cookie-body {
+  font-size: .88rem; color: var(--ink-soft); line-height: 1.5;
+  margin-bottom: 18px;
+}
+.cookie-body a { color: var(--coral-deep); text-decoration: underline; text-underline-offset: 2px; }
+.cookie-body strong { color: var(--ink); }
+
+.cookie-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.cookie-actions .btn { flex: 1 1 auto; }
+
+@media (max-width: 560px) {
+  .cookie { left: 12px; right: 12px; bottom: 12px; width: auto; padding: 20px; }
+  .cookie-actions .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie { transition: none; }
+}
+
 /* ── Legal pages (privacy, terms) ────────────────────────────────────────── */
 
 .legal {
