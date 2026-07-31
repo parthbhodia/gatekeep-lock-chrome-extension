@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cat Break — a cat interrupts your doomscroll</title>
+<meta name="description" content="Free Chrome extension. When you've been on a site too long, a cat walks onto the page, pauses the video, and stays until you've taken a real break. No account, no ads, nothing leaves your device." />
+<!-- www is the host that serves 200; the apex 308-redirects to it. Canonical and
+     og:url must name the URL that actually resolves, or the signals split. -->
+<link rel="canonical" href="https://www.catbreak.com/" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://www.catbreak.com/" />
+<meta property="og:site_name" content="Cat Break" />
+<meta property="og:title" content="Cat Break — a cat interrupts your doomscroll" />
+<meta property="og:description" content="Hit your time limit and a cat takes over the tab. Works on any site, not just social. Free Chrome extension. Nothing leaves your device." />
+<meta property="og:image" content="https://www.catbreak.com/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="A cat standing in a browser window asking you to take a break." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Cat Break — a cat interrupts your doomscroll" />
+<meta name="twitter:description" content="Hit your time limit and a cat takes over the tab. Works on any site, not just social." />
+<meta name="twitter:image" content="https://www.catbreak.com/og.jpg" />
+
+<link rel="icon" href="icons/icon-32.png" sizes="32x32" />
+<link rel="icon" href="icons/icon-128.png" sizes="128x128" />
+<link rel="apple-touch-icon" href="icons/icon-128.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://pozytitruvcthhfvpqic.supabase.co" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Cat Break",
+  "alternateName": "Cat Break — Website Time Limit",
+  "applicationCategory": "BrowserApplication",
+  "applicationSubCategory": "Productivity",
+  "operatingSystem": "Chrome",
+  "description": "Free Chrome extension that tracks active time per website and plays a full-screen cat video when you reach your limit. Unlike social-media-only blockers, Cat Break works on any http or https site, with per-site time limits, exclusions, and a list-only mode. No account, no ads, and no data leaves your device.",
+  "url": "https://www.catbreak.com/",
+  "downloadUrl": "https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh",
+  "installUrl": "https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh",
+  "isAccessibleForFree": true,
+  "license": "https://opensource.org/licenses/MIT",
+  "featureList": [
+    "Works on any http or https website, not only social media",
+    "Per-site time limits that override the global default",
+    "Excluded sites that are never tracked or interrupted",
+    "List-only mode — time just the domains you name",
+    "Counts only active, focused tab time",
+    "Pauses playing video, including shadow-DOM players like YouTube",
+    "Auto-dismissing break with an on-screen countdown",
+    "Nine cat videos with an optional random cat per break"
+  ],
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is Cat Break really free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. No account, no ads, no paid tier, no upsell. It is MIT-licensed and the source is on GitHub." }
+    },
+    {
+      "@type": "Question",
+      "name": "What data does Cat Break collect?",
+      "acceptedAnswer": { "@type": "Answer", "text": "None. Settings and daily totals live in chrome.storage on your own machine. There is no server, no analytics, and no sync. The only thing your browser fetches is the cat video itself." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Cat Break work on every site?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Any normal http or https page. Unlike extensions that only cover a fixed list of social networks, Cat Break can time any website you visit. Chrome internal pages such as chrome:// are off-limits to every extension." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do background tabs count against my limit?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. The timer only runs while that tab is the active, focused one. Leave twelve tabs open and only the one you are looking at counts." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I limit just one or two sites?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Add them under Limit by site and turn on 'Only limit sites on the list below'. Everything else is then ignored completely." }
+    },
+    {
+      "@type": "Question",
+      "name": "What if I need to keep working when the cat appears?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Press Esc or hit Shoo in the popup and it is gone. Cat Break is a speed bump, not a lock." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the timer reset?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Every day at midnight. After a break finishes, that site's clock also starts fresh." }
+    }
+  ]
+}
+</script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFGHY3T64Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFGHY3T64Y');
+</script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ─── Nav ───────────────────────────────────────────────────────────────── -->
+<header class="nav" id="nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="#top">
+      <img src="icons/icon-48.png" alt="" width="34" height="34" />
+      <span>Cat&nbsp;Break</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#cats">The cats</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+      Add to Chrome
+    </a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="hero" id="top">
+  <div class="blob blob-1" aria-hidden="true"></div>
+  <div class="blob blob-2" aria-hidden="true"></div>
+
+  <div class="shell hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow reveal" style="--d:0ms">
+        <span class="dot"></span> Free Chrome extension
+      </p>
+
+      <h1 class="reveal" style="--d:60ms">
+        “Ten more minutes”<br />
+        turns into <em>an hour.</em>
+      </h1>
+
+      <p class="lede reveal" style="--d:140ms">
+        Cat Break watches the clock so you don’t have to. Hit your limit and a cat
+        walks onto the page, pauses whatever’s playing, and hangs around until
+        you’ve actually taken a break.
+      </p>
+
+      <div class="cta-row reveal" style="--d:220ms">
+        <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 1 8.66 5H12a5 5 0 0 0-4.9 4.02L3.5 4.9A10 10 0 0 1 12 2Zm9.5 5.53A10 10 0 0 1 12 22l4.06-7.03A4.98 4.98 0 0 0 17 12a4.98 4.98 0 0 0-.72-2.58h5.22ZM2.4 7.06 6.46 14.1A5 5 0 0 0 11.2 17l-3.6 4.6A10 10 0 0 1 2.4 7.06ZM12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z"/></svg>
+          Add to Chrome — it’s free
+        </a>
+        <button class="btn btn-ghost btn-lg" type="button" data-demo-trigger>
+          Show me the cat
+        </button>
+      </div>
+
+      <ul class="trust reveal" style="--d:300ms">
+        <li>No account</li>
+        <li>No ads</li>
+        <li>Nothing leaves your device</li>
+        <li>Open source</li>
+      </ul>
+    </div>
+
+    <!-- Browser mockup: a real cat, chroma-keyed, walking over a fake feed -->
+    <div class="hero-stage reveal" style="--d:200ms">
+      <div class="browser" role="img" aria-label="A browser window with a cat standing over the page, asking you to take a break">
+        <div class="browser-bar">
+          <span class="tl tl-r"></span><span class="tl tl-y"></span><span class="tl tl-g"></span>
+          <div class="omnibox"><svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm3 8V6a3 3 0 1 0-6 0v3h6Z"/></svg> somewhere-you-lost-an-hour.com</div>
+        </div>
+        <div class="browser-body">
+          <div class="feed" aria-hidden="true">
+            <div class="fpost"><div class="fav"></div><div class="flines"><i style="width:62%"></i><i style="width:38%"></i></div></div>
+            <div class="fmedia"></div>
+            <div class="fpost"><div class="fav"></div><div class="flines"><i style="width:54%"></i><i style="width:70%"></i></div></div>
+            <div class="fmedia fmedia-2"></div>
+            <div class="fpost"><div class="fav"></div><div class="flines"><i style="width:46%"></i><i style="width:60%"></i></div></div>
+          </div>
+
+          <div class="overlay-scrim" aria-hidden="true"></div>
+
+          <div class="hero-timer" aria-hidden="true">4:58</div>
+
+          <div class="cat-slot" data-cat="cat-curious-stroll.mp4" data-hero="true">
+            <canvas class="cat-canvas"></canvas>
+            <div class="cat-shadow"></div>
+          </div>
+
+          <div class="speech">
+            <p class="speech-title">Meow — your scroll paw needs a rest.</p>
+            <p class="speech-body">This cat wants you to take a break. You’ve been here for <strong>1 hr 12 min</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <p class="stage-note">↑ This is the real thing, running right here.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Marquee ───────────────────────────────────────────────────────────── -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>Nudge, don’t block</span><span class="sep">🐾</span>
+    <span>Only counts time you’re actually there</span><span class="sep">🐾</span>
+    <span>Pauses the video for you</span><span class="sep">🐾</span>
+    <span>Per-site limits</span><span class="sep">🐾</span>
+    <span>The break ends itself</span><span class="sep">🐾</span>
+    <span>Nudge, don’t block</span><span class="sep">🐾</span>
+    <span>Only counts time you’re actually there</span><span class="sep">🐾</span>
+    <span>Pauses the video for you</span><span class="sep">🐾</span>
+    <span>Per-site limits</span><span class="sep">🐾</span>
+    <span>The break ends itself</span><span class="sep">🐾</span>
+  </div>
+</div>
+
+<!-- ─── Problem ───────────────────────────────────────────────────────────── -->
+<section class="problem">
+  <div class="shell problem-inner">
+    <h2 class="section-title">You don’t have a willpower problem.</h2>
+    <p class="section-lede">
+      You have a <strong>nothing-interrupts-you</strong> problem. Notifications get swiped
+      away in half a second. Hard blockers get uninstalled by Wednesday. What actually
+      works is something you can’t scroll past — and don’t <em>want</em> to.
+    </p>
+    <div class="problem-cards">
+      <article class="pcard pcard-a">
+        <span class="pc-emoji">🔕</span>
+        <h3>A toast notification</h3>
+        <p>Gone before you read it. You dismissed it with your thumb already moving.</p>
+      </article>
+      <article class="pcard pcard-b">
+        <span class="pc-emoji">🚫</span>
+        <h3>A hard blocker</h3>
+        <p>Feels like punishment. You disable it “just this once” and never turn it back on.</p>
+      </article>
+      <article class="pcard pcard-c is-win">
+        <span class="pc-emoji">🐈</span>
+        <h3>A cat on your screen</h3>
+        <p>Impossible to ignore, impossible to resent. You look at it, you smile, you get up.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── How it works ──────────────────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="shell">
+    <p class="kicker">How it works</p>
+    <h2 class="section-title">Three steps, then forget about it.</h2>
+
+    <ol class="steps">
+      <li class="step">
+        <span class="step-num">1</span>
+        <h3>Pick your limit</h3>
+        <p>15, 30, 45, 60, 90 minutes — or anything up to 600. One default for everything, and per-site rules when you want them.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">2</span>
+        <h3>Browse like normal</h3>
+        <p>The timer only runs while the tab is actually focused. Switch tabs or apps and it pauses. Background tabs never eat your limit.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">3</span>
+        <h3>The cat arrives</h3>
+        <p>Full screen, video paused, countdown running. When your break is up it leaves on its own — or shoo it away early.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ─── Feature banners ───────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="shell">
+    <p class="kicker">Features</p>
+    <h2 class="section-title">Softer than a blocker.<br />Harder to ignore than a reminder.</h2>
+  </div>
+
+  <div class="shell fbanner">
+    <div class="fb-copy">
+      <span class="fb-tag">Honest timing</span>
+      <h3>It only counts the time you were really there.</h3>
+      <p>
+        Most trackers count a tab as "open." Cat Break counts a tab as <em>focused</em>.
+        Alt-tab to your editor, take a call, walk away — the clock stops. The 45 minutes
+        it reports are 45 minutes you actually spent.
+      </p>
+      <ul class="fb-list">
+        <li>Pauses when the tab loses focus</li>
+        <li>Pauses when the whole window loses focus</li>
+        <li>Totals reset at midnight</li>
+      </ul>
+    </div>
+    <div class="fb-art">
+      <div class="timecard">
+        <div class="tc-row"><span class="tc-site">reddit.com</span><span class="tc-time">52m</span></div>
+        <div class="tc-bar"><i style="width:86%"></i></div>
+        <div class="tc-row"><span class="tc-site">x.com</span><span class="tc-time">31m</span></div>
+        <div class="tc-bar"><i style="width:52%"></i></div>
+        <div class="tc-row"><span class="tc-site">youtube.com</span><span class="tc-time">18m</span></div>
+        <div class="tc-bar"><i style="width:30%"></i></div>
+        <div class="tc-foot"><span class="pulse"></span> Timer paused — tab not focused</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell fbanner fbanner-flip">
+    <div class="fb-copy">
+      <span class="fb-tag">Per-site rules</span>
+      <h3>Strict where you need it. Invisible everywhere else.</h3>
+      <p>
+        Give the feeds a 20-minute leash and leave your docs, mail and dashboards alone.
+        Or flip it around: track <em>only</em> the handful of sites that actually get you,
+        and ignore the rest of the internet entirely.
+      </p>
+      <ul class="fb-list">
+        <li><strong>Limit by site</strong> — per-domain minutes that beat the default</li>
+        <li><strong>Excluded sites</strong> — never tracked, never interrupted</li>
+        <li><strong>List-only mode</strong> — only the domains you name are timed</li>
+      </ul>
+    </div>
+    <div class="fb-art">
+      <div class="rulecard">
+        <div class="rule"><span class="rd">instagram.com</span><span class="rm">20 min</span></div>
+        <div class="rule"><span class="rd">news.ycombinator.com</span><span class="rm">30 min</span></div>
+        <div class="rule"><span class="rd">youtube.com</span><span class="rm">45 min</span></div>
+        <div class="rule rule-off"><span class="rd">github.com</span><span class="rm">excluded</span></div>
+        <div class="rule rule-off"><span class="rd">mail.google.com</span><span class="rm">excluded</span></div>
+        <label class="switch">
+          <span>Only limit sites on the list</span>
+          <span class="track" aria-hidden="true"><i></i></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell fbanner">
+    <div class="fb-copy">
+      <span class="fb-tag">It handles the video</span>
+      <h3>Your autoplay doesn’t get to keep going.</h3>
+      <p>
+        A break you can hear isn’t a break. When the cat lands, Cat Break pauses what’s
+        playing — including players buried in shadow DOM, like YouTube’s. If a page
+        refuses to pause, it mutes the tab instead. When you’re done, playback picks
+        back up.
+      </p>
+    </div>
+    <div class="fb-art">
+      <div class="pausecard">
+        <div class="pc-screen">
+          <span class="pc-pause"></span>
+        </div>
+        <p class="pc-cap">Paused for your break — resumes after</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell fbanner fbanner-flip">
+    <div class="fb-copy">
+      <span class="fb-tag">You stay in control</span>
+      <h3>The break ends itself. No willpower required.</h3>
+      <p>
+        Set how long the cat stays — a 2-minute stretch or a proper 10. A countdown runs
+        in the corner and the overlay clears on its own. Need out early? Press
+        <kbd>Esc</kbd> or shoo it from the popup. It’s a nudge, not a cage.
+      </p>
+    </div>
+    <div class="fb-art">
+      <div class="ringwrap">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-fg" cx="60" cy="60" r="52" />
+        </svg>
+        <div class="ring-label"><strong>4:58</strong><span>until it clears</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Cat gallery ───────────────────────────────────────────────────────── -->
+<section class="cats" id="cats">
+  <div class="shell">
+    <p class="kicker">The roster</p>
+    <h2 class="section-title">Nine cats. One shows up.</h2>
+    <p class="section-lede center">
+      Pick your favourite, or leave <strong>Random cat</strong> on and let the break
+      surprise you. Hover any of them to say hello.
+    </p>
+
+    <!-- Rendered in HTML, not injected by JS: the cat names are the only place the
+         roster is stated in text, and a crawler that doesn't run scripts must still
+         see them. app.js hydrates these cards rather than creating them. -->
+    <div class="cat-grid" id="catGrid">
+      <div class="cat-card" data-cat="cat-morning-paws.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Morning Paws</span></div>
+      <div class="cat-card" data-cat="cat-street-strut.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Street Strut</span></div>
+      <div class="cat-card" data-cat="cat-window-watcher.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Window Watcher</span></div>
+      <div class="cat-card" data-cat="cat-garden-stroll.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Garden Stroll</span></div>
+      <div class="cat-card" data-cat="cat-twilight-prowl.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Twilight Prowl</span></div>
+      <div class="cat-card" data-cat="cat-lazy-stretch.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Lazy Stretch</span></div>
+      <div class="cat-card" data-cat="cat-curious-stroll.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Curious Stroll</span></div>
+      <div class="cat-card" data-cat="cat-elegant-steps.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Elegant Steps</span></div>
+      <div class="cat-card" data-cat="cat-alley-amble.mp4"><canvas class="cat-canvas"></canvas><span class="cat-name">Alley Amble</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Try it ────────────────────────────────────────────────────────────── -->
+<section class="tryit">
+  <div class="shell tryit-inner">
+    <h2>Don’t take our word for it.</h2>
+    <p>Trigger a real break, right here on this page. It works exactly like this in your browser.</p>
+    <button class="btn btn-primary btn-lg" type="button" data-demo-trigger>Trigger a cat break</button>
+    <p class="tryit-note">Press <kbd>Esc</kbd> to shoo it away.</p>
+  </div>
+</section>
+
+<!-- ─── FAQ ───────────────────────────────────────────────────────────────── -->
+<section class="faq" id="faq">
+  <div class="shell faq-inner">
+    <p class="kicker">Questions</p>
+    <h2 class="section-title">The usual ones.</h2>
+
+    <div class="faq-list">
+      <details>
+        <summary>Is it really free?</summary>
+        <p>Yes. No account, no ads, no paid tier, no upsell. It’s MIT-licensed and the source is on GitHub.</p>
+      </details>
+      <details>
+        <summary>What data do you collect?</summary>
+        <p>None. Settings and daily totals live in <code>chrome.storage</code> on your own machine. There’s no server, no analytics, and no sync. The only thing your browser fetches from us is the cat video itself.</p>
+      </details>
+      <details>
+        <summary>Does it work on every site?</summary>
+        <p>Any normal <code>http</code> or <code>https</code> page. Chrome’s internal pages (<code>chrome://</code>, the Web Store) are off-limits to every extension, including this one.</p>
+      </details>
+      <details>
+        <summary>Do background tabs count against me?</summary>
+        <p>No. The timer only runs while that tab is the active, focused one. Leave twelve tabs open — only the one you’re looking at counts.</p>
+      </details>
+      <details>
+        <summary>Can I limit just one or two sites?</summary>
+        <p>Yes. Add them under <strong>Limit by site</strong> and turn on <strong>Only limit sites on the list below</strong>. Everything else is then ignored completely.</p>
+      </details>
+      <details>
+        <summary>What if I genuinely need to keep working?</summary>
+        <p>Press <kbd>Esc</kbd> or hit <strong>Shoo</strong> in the popup and it’s gone. Cat Break is a speed bump, not a lock. That’s the whole point.</p>
+      </details>
+      <details>
+        <summary>Does the timer reset?</summary>
+        <p>Every day at midnight. After a break finishes, that site’s clock also starts fresh.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Final CTA ─────────────────────────────────────────────────────────── -->
+<section class="final">
+  <div class="shell final-inner">
+    <div class="final-cat" data-cat="cat-lazy-stretch.mp4">
+      <canvas class="cat-canvas"></canvas>
+    </div>
+    <div class="final-copy">
+      <h2>Go outside. The cat insists.</h2>
+      <p>Two clicks to install. Roughly forty seconds to set up. Then it just lives there, quietly counting.</p>
+      <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+        Add to Chrome — it’s free
+      </a>
+      <p class="final-note">Free forever · No account · Works on any site</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <img src="icons/icon-48.png" alt="" width="30" height="30" />
+      <span>Cat Break</span>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+      <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">Contact</a>
+    </nav>
+    <p class="footer-legal">© <span id="year">2026</span> catbreak.com · Made for people who meant to close the tab.</p>
+  </div>
+</footer>
+
+<!-- ─── Live demo overlay (mirrors the extension) ─────────────────────────── -->
+<div class="demo" id="demo" hidden>
+  <div class="demo-scrim"></div>
+  <div class="demo-timer" id="demoTimer">0:20</div>
+  <div class="demo-cat" data-cat="">
+    <canvas class="cat-canvas"></canvas>
+    <div class="cat-shadow"></div>
+  </div>
+  <div class="demo-card" role="dialog" aria-modal="true" aria-labelledby="demoTitle">
+    <button class="demo-close" id="demoClose" aria-label="Shoo the cat away">×</button>
+    <p class="demo-title" id="demoTitle">Meow — your scroll paw needs a rest.</p>
+    <p class="demo-body">This cat wants you to take a break. You’ve been on <strong>catbreak.com</strong> for <strong>1 hr 12 min</strong>.</p>
+    <p class="demo-hint">Press <kbd>Esc</kbd> to shoo · this is a demo of the real extension</p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# catbreak.com — everything here is public marketing content.
+# AI crawlers are welcome: being quotable is the point.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://www.catbreak.com/sitemap.xml

@@ -1,0 +1,72 @@
+# Cat Break
+
+> Free Chrome extension. When you have been on a website too long, a cat walks
+> onto the page, pauses whatever is playing, and stays until you have taken a
+> break. Works on any site — not only social media.
+
+Website: https://www.catbreak.com/
+Chrome Web Store: https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh
+Source: https://github.com/parthbhodia/gatekeep-lock-chrome-extension
+License: MIT
+Price: Free. No account, no ads, no paid tier.
+
+## What it is
+
+Cat Break tracks **active tab time per website** and plays a **full-screen cat
+video** when a limit is reached — memorable, rather than a notification you swipe
+away without reading. The break auto-dismisses after a duration you choose; you
+can also preview it or shoo it away with Esc.
+
+## What makes it different
+
+Most "cat interrupts your scrolling" extensions only cover a fixed list of social
+networks. Cat Break is a **general-purpose website timer**:
+
+- **Works on any http or https site**, not a hardcoded list of social platforms
+- **Per-site limits** — give feeds 20 minutes and leave docs and mail alone
+- **Excluded sites** — never tracked, never interrupted
+- **List-only mode** — time *only* the domains you name, ignore everything else
+- **Honest timing** — counts only active, focused tab time; alt-tab and the clock stops
+- **Pauses video** — including players inside open shadow DOM, such as YouTube's;
+  mutes the tab if a page refuses to pause, and resumes playback afterwards
+
+## How it works
+
+1. Set a default limit (15 / 30 / 45 / 60 / 90 minutes, or custom up to 600).
+2. Optionally add per-site limits, exclusions, or list-only tracking.
+3. The timer runs only while the tab is focused. Background tabs never count.
+4. At the limit the cat overlay appears, with a countdown, and clears itself when
+   the break ends. Esc or "Shoo" dismisses it early.
+5. Daily totals reset at midnight. After a break, that site's clock starts fresh.
+
+## The cats
+
+Nine clips, selectable, with an optional **Random cat** mode that picks a
+different one for each break: Morning Paws, Street Strut, Window Watcher, Garden
+Stroll, Twilight Prowl, Lazy Stretch, Curious Stroll, Elegant Steps, Alley Amble.
+
+## Privacy
+
+No analytics, no account, no sync, no server. Settings and daily totals stay in
+`chrome.storage` on the user's own device. The only network request the extension
+makes is fetching the cat video itself.
+Policy: https://github.com/parthbhodia/gatekeep-lock-chrome-extension/blob/main/PRIVACY.md
+
+## Who it is for
+
+People who lose track of time on social, video, or news sites and want a soft
+brake rather than a hard block — and people who need that brake on sites a
+social-media-only blocker does not cover.
+
+## Permissions and why
+
+- `tabs` — know the active tab's site and send the overlay
+- `storage` — save settings and daily totals locally
+- `alarms` — periodic limit checks
+- `windows` — track focus and window context
+- `scripting` — inject the cat overlay into pages
+- `http://*/*`, `https://*/*` — show the overlay on the sites you browse
+
+## Contact
+
+parthbhodia08@gmail.com (subject: "Cat Break")
