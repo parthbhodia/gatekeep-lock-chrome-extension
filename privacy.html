@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy – Cat Break</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <span class="page-logo" aria-hidden="true">🐱</span>
+      <div>
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated: 2026-06-14</p>
+      </div>
+    </header>
+
+    <p class="highlight">
+      Cat Break does not collect, sell, or transmit your personal data. Your settings and
+      usage stay on your device, and there is no analytics or tracking of any kind.
+    </p>
+
+    <section class="card">
+      <h2>Summary</h2>
+      <ul>
+        <li>We do not collect, sell, or transmit personal data.</li>
+        <li>Your settings and usage data stay on your device and are removed when you uninstall the extension or clear its storage.</li>
+        <li>No analytics or tracking of any kind.</li>
+        <li>Cat videos are loaded and cached from our Supabase storage CDN; no executable code is fetched remotely.</li>
+      </ul>
+
+      <h2>Data we access</h2>
+      <ul>
+        <li>Active tab domain and timing to enforce your per-site limits.</li>
+        <li>Your settings (default limit, per-site limits, cat linger time, chosen video) and per-site usage totals stored locally via <code>chrome.storage</code>.</li>
+        <li>Temporary snooze flags and last-reset date stored locally.</li>
+      </ul>
+
+      <h2>How we use permissions</h2>
+      <ul>
+        <li><code>tabs</code>: identify the active tab/domain and send overlay messages to that tab.</li>
+        <li><code>storage</code>: save your settings, time totals, snooze flags, and last reset locally.</li>
+        <li><code>alarms</code>: run a periodic timer to increment usage and check limits.</li>
+        <li><code>scripting</code>: inject the overlay script/CSS if the content script is not already present.</li>
+        <li><code>http://*/*</code>, <code>https://*/*</code> host access: allow the overlay to appear on sites you choose to limit; browsing data is not transmitted.</li>
+      </ul>
+
+      <h2>Network requests</h2>
+      <ul>
+        <li>Cat videos are fetched and cached from our Supabase storage bucket (<code>pozytitruvcthhfvpqic.supabase.co</code>). Delivering them exposes standard request metadata (such as your IP address) to Supabase, as with loading any image or video on the web.</li>
+        <li>These requests carry no browsing history, site names, usage times, or personal identifiers — only the name of the video file being downloaded.</li>
+      </ul>
+
+      <h2>Data sharing</h2>
+      <ul>
+        <li>We do not share your settings, usage times, or browsing data with anyone.</li>
+        <li>The only third party contacted is our own Supabase storage CDN, solely to deliver cat videos (see Network requests above).</li>
+      </ul>
+
+      <h2>Security</h2>
+      <ul>
+        <li>All extension code (scripts, styles) is bundled with the extension; no executable code is fetched or run remotely.</li>
+        <li>Only media assets (cat videos) are loaded at runtime, over HTTPS, from our Supabase storage CDN.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p>
+        Questions or issues? Email
+        <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">parthbhodia08@gmail.com</a>
+        with the subject “Cat Break”, or use the <a href="contact.html">contact page</a>.
+      </p>
+    </section>
+
+    <footer class="page-footer">
+      <a href="terms.html">Terms of service</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source on GitHub</a>
+    </footer>
+  </main>
+</body>
+</html>

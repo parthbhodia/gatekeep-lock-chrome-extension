@@ -1038,6 +1038,39 @@ body {
   color: var(--ink-soft);
 }
 
+/* ── Footer links ────────────────────────────────────────────────────────── */
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 12px 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.app-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  color: var(--coral-deep);
+  text-decoration: underline;
+}
+
+.app-footer a:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.app-footer-dot {
+  color: #d8d2e0;
+}
+
 /* ── First-run feature tour ──────────────────────────────────────────────── */
 
 .tour-overlay {
