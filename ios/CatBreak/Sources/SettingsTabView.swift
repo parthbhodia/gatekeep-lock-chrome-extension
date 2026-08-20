@@ -41,6 +41,18 @@ struct SettingsTabView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        GreetingSetupView()
+                    } label: {
+                        Label("Cat greets Instagram (open-app takeover)", systemImage: "sparkles")
+                    }
+                } header: {
+                    Text("Cat greetings")
+                } footer: {
+                    Text("A one-time Shortcuts automation opens the cat the moment a watched app launches — full video takeover, then a floating cat hovering over the app.")
+                }
+
+                Section {
                     Toggle("Show the Shoo button on the cat screen", isOn: $model.settings.allowShoo)
                 } footer: {
                     Text("Turn this off for firmer breaks — the cat stays until the break ends.")

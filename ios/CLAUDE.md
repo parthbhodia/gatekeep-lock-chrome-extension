@@ -40,7 +40,12 @@ embeds it but cannot read the numbers (OS sandbox).
 - DeviceActivity: schedules min 15 min; thresholds can fire late; ~20 activity
   limit per app. Don't add per-app activities — keep one daily activity.
 - Shield UI is a fixed template (`ShieldConfiguration`): no video, no custom
-  views. Don't try.
+  views. Don't try. And keep it translucent: `backgroundColor: nil` plus the
+  ultra-thin material is what lets the shielded app show through frosted —
+  an opaque backgroundColor hides it and defeats the see-through design.
+- Shield icon comes from baked keyed frames in `shield-cats/` inside the App
+  Group (`ShieldCatBaker` bakes in the app; the shield extension only reads
+  via `ShieldCatFrames`). The bundled logo is a first-run fallback only.
 - Cat videos stream from the Supabase bucket in `CatVideoLibrary` (same as
   `background.js`). Anon key is publishable/read-only by design.
 - Distribution requires the Family Controls entitlement from Apple for the app
@@ -56,3 +61,26 @@ embeds it but cannot read the numbers (OS sandbox).
    returns (ladder working).
 3. Cross midnight (or set device clock forward) → shields clear, counts reset.
 4. Stats tab shows today's totals for watched apps.
+
+## Greeting overlay (cat on top of Instagram)
+
+- Deep link: `catbreak://break?return=<scheme>` (registered in
+  `CatBreak/Info.plist`) → `AppModel.handleDeepLink` → full-screen
+  `CatOverlayView` (`.greeting` mode). Set up by the user as a Shortcuts
+  "App Is Opened" automation via `GreetingSetupView` (Settings tab).
+- The cat is chroma-keyed: `ChromaKey.swift` ports content.js's
+  getGreenKeyStrength verbatim (0–255 domain) into a 64³ CIColorCube used as
+  an AVVideoComposition; `KeyedPlayerUIView` sets BGRA pixelBufferAttributes
+  on the AVPlayerLayer or the alpha won't render. Keep the constants in sync
+  with content.js if the extension's keying changes.
+- Overlay modes: `.preview` (Cat tab, capped at 3 min), `.greeting` with
+  active break → linger until `SharedStore.breakEndsAt`, else greet for
+  `settings.greetSeconds` then auto-continue.
+- Loop guard is two-sided: `CatNappingIntent` (Shortcuts If-guard) and the
+  180-second nap check in `handleDeepLink`. Keep the two windows in sync.
+- `CatBreakSettings` uses decodeIfPresent for every field — adding a field
+  must never wipe stored settings. Preserve that when editing.
+- CI: `.github/workflows/ios-build.yml` builds unsigned for the simulator on
+  macOS runners and captures two screenshots: tabs (`-catbreak-ui-preview`)
+  and the overlay (`-catbreak-overlay-preview`). Both launch args bypass the
+  auth gate for UI rendering only.

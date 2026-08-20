@@ -15,6 +15,7 @@ enum SharedStore {
         static let eventFireCounts = "eventFireCounts"
         static let breakEndsAt = "breakEndsAt"
         static let currentMeowLine = "currentMeowLine"
+        static let lastTakeoverAt = "lastTakeoverAt"
     }
 
     // MARK: - Settings
@@ -84,5 +85,18 @@ enum SharedStore {
     static var currentMeowLine: String {
         get { defaults.string(forKey: Key.currentMeowLine) ?? MeowLines.all[0] }
         set { defaults.set(newValue, forKey: Key.currentMeowLine) }
+    }
+
+    // MARK: - Greeting takeover
+
+    /// When the last greeting takeover happened — the cat "naps" for a few
+    /// minutes afterwards so returning to the greeted app doesn't re-trigger
+    /// the automation in a loop.
+    static var lastTakeoverAt: Date? {
+        get {
+            let t = defaults.double(forKey: Key.lastTakeoverAt)
+            return t > 0 ? Date(timeIntervalSince1970: t) : nil
+        }
+        set { defaults.set(newValue?.timeIntervalSince1970 ?? 0, forKey: Key.lastTakeoverAt) }
     }
 }

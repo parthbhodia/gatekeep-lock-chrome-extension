@@ -70,7 +70,7 @@ struct CatTabView: View {
             }
             .navigationTitle("Cat Break")
             .fullScreenCover(isPresented: $showPreview) {
-                BreakPreviewView()
+                CatOverlayView(mode: .preview)
             }
         }
     }
