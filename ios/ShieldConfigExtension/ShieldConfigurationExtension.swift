@@ -22,7 +22,10 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
             // hides it — see the invariant in ios/CLAUDE.md.
             backgroundBlurStyle: .systemUltraThinMaterialDark,
             backgroundColor: nil,
-            icon: UIImage(named: "shield-cat"),
+            // A real cat, not the logo: a chroma-keyed still baked from the
+            // actual cat videos (ShieldCatBaker). Different cat per break in
+            // random mode; the bundled icon only covers the very first runs.
+            icon: ShieldCatFrames.frameForCurrentSettings() ?? UIImage(named: "shield-cat"),
             title: ShieldConfiguration.Label(text: "Cat break! 🐾", color: cream),
             subtitle: ShieldConfiguration.Label(
                 text: SharedStore.currentMeowLine,

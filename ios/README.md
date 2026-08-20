@@ -120,7 +120,10 @@ with the extension's overlay recreated in the app:
    overlay iOS grants: the system draws it over the live app with a nil
    background and an ultra-thin material, so Instagram itself stays visible,
    frosted, behind the cat image, meow line, and buttons (static template
-   only; Apple allows no video there).
+   only; Apple allows no video there). And that image is a REAL cat: the app
+   pre-bakes chroma-keyed stills from the cat videos into the App Group
+   (`ShieldCatBaker`); the shield picks one per break — the bundled logo is
+   only a first-run fallback.
 
 What iOS cannot do, honestly: render Instagram's own pixels behind an APP
 (apps are sandboxed; there is no cross-app capture), or float a borderless

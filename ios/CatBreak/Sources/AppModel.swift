@@ -50,6 +50,12 @@ final class AppModel: ObservableObject {
            let first = videos.first {
             settings.catVideoFile = first.file
         }
+        // Bake keyed shield stills in the background so the shield shows a
+        // real cat instead of the bundled icon (see ShieldCatBaker).
+        let current = videos
+        Task.detached(priority: .utility) {
+            await ShieldCatBaker.bakeMissingFrames(for: current)
+        }
     }
 
     /// Belt and suspenders: breaks shorter than DeviceActivity's 15-minute

@@ -43,6 +43,9 @@ embeds it but cannot read the numbers (OS sandbox).
   views. Don't try. And keep it translucent: `backgroundColor: nil` plus the
   ultra-thin material is what lets the shielded app show through frosted —
   an opaque backgroundColor hides it and defeats the see-through design.
+- Shield icon comes from baked keyed frames in `shield-cats/` inside the App
+  Group (`ShieldCatBaker` bakes in the app; the shield extension only reads
+  via `ShieldCatFrames`). The bundled logo is a first-run fallback only.
 - Cat videos stream from the Supabase bucket in `CatVideoLibrary` (same as
   `background.js`). Anon key is publishable/read-only by design.
 - Distribution requires the Family Controls entitlement from Apple for the app

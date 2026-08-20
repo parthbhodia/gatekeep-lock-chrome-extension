@@ -7,8 +7,8 @@ import CoreImage
 /// applied as an AVVideoComposition, so the cat renders with real per-pixel
 /// transparency and walks over the overlay exactly like on the web.
 enum ChromaKey {
-    private static let cubeDimension = 64
-    private static let cubeData = makeCube()
+    static let cubeDimension = 64
+    static let cubeData = makeCube()
 
     static func composition(for asset: AVAsset) -> AVMutableVideoComposition {
         AVMutableVideoComposition(asset: asset) { request in
