@@ -1,0 +1,75 @@
+name: ios-build
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths: ["ios/**", ".github/workflows/ios-build.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build + simulator screenshot
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator (unsigned)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CatBreak.xcodeproj \
+            -scheme CatBreak \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1 || {
+              echo "::error::xcodebuild failed — first errors below"
+              grep -E "error: " build.log | head -100
+              exit 1
+            }
+          echo "BUILD SUCCEEDED"
+          grep -E " warning: " build.log | head -30 || true
+
+      - name: Launch in simulator and screenshot
+        continue-on-error: true
+        working-directory: ios
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(dev['udid'] for rt,devs in d.items() if 'iOS' in rt for dev in devs if dev.get('isAvailable') and 'iPhone' in dev['name']))")
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP_PATH=$(find build/Build/Products -maxdepth 2 -name "CatBreak.app" | head -1)
+          echo "Installing $APP_PATH"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" com.catbreak.app -catbreak-ui-preview
+          sleep 12
+          xcrun simctl io "$UDID" screenshot screenshot.png
+          sips -Z 640 screenshot.png --out screenshot-small.png
+          echo "===SCREENSHOT_BASE64_START==="
+          base64 -i screenshot-small.png | fold -w 300
+          echo "===SCREENSHOT_BASE64_END==="
+
+      - name: Upload screenshot artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-screenshot
+          path: |
+            ios/screenshot.png
+            ios/screenshot-small.png
+          if-no-files-found: ignore

@@ -1,8 +1,17 @@
 import Foundation
 import SwiftUI
+import UIKit
 import FamilyControls
 import ManagedSettings
 import DeviceActivity
+
+/// A greeting takeover triggered by the Shortcuts automation deep link
+/// (catbreak://break?return=instagram).
+struct TakeoverRequest: Identifiable {
+    let id = UUID()
+    /// Where "Continue" heads back to (e.g. instagram://), if provided.
+    let returnURL: URL?
+}
 
 /// Source of truth for the UI; persists to the shared App Group store and
 /// reschedules monitoring whenever something relevant changes — the role
@@ -14,6 +23,7 @@ final class AppModel: ObservableObject {
     @Published var authorizationStatus: AuthorizationStatus = .notDetermined
     @Published var videos: [CatVideo] = CatVideoLibrary.fallbackVideos
     @Published var scheduleError: String?
+    @Published var takeover: TakeoverRequest?
 
     init() {
         settings = SharedStore.loadSettings()
@@ -56,6 +66,26 @@ final class AppModel: ObservableObject {
     func shooNow() {
         ShieldController.liftAll()
         try? MonitorScheduler.refreshMonitoring()
+    }
+
+    /// Handles catbreak://break?return=<scheme> from the greeting automation.
+    func handleDeepLink(_ url: URL) {
+        guard url.scheme?.lowercased() == "catbreak",
+              (url.host ?? "").lowercased() == "break" else { return }
+
+        let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let raw = comps?.queryItems?.first(where: { $0.name == "return" })?.value ?? ""
+        let scheme = raw.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "+" || $0 == "." }
+        let returnURL = scheme.isEmpty ? nil : URL(string: "\(scheme)://")
+
+        // In-app half of the loop guard (the Shortcuts half is the
+        // "Is the cat napping?" action): if the cat is napping, bounce back
+        // to the greeted app instead of greeting again.
+        if let last = SharedStore.lastTakeoverAt, Date().timeIntervalSince(last) < 180 {
+            if let returnURL { UIApplication.shared.open(returnURL) }
+            return
+        }
+        takeover = TakeoverRequest(returnURL: returnURL)
     }
 
     private func persist() {

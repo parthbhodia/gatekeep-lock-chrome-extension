@@ -56,3 +56,19 @@ embeds it but cannot read the numbers (OS sandbox).
    returns (ladder working).
 3. Cross midnight (or set device clock forward) → shields clear, counts reset.
 4. Stats tab shows today's totals for watched apps.
+
+## Greeting takeover + PiP hover (cat on top of Instagram)
+
+- Deep link: `catbreak://break?return=<scheme>` (registered in
+  `CatBreak/Info.plist`) → `AppModel.handleDeepLink` → full-screen
+  `BreakTakeoverView`. Set up by the user as a Shortcuts "App Is Opened"
+  automation via `GreetingSetupView` (Settings tab).
+- `CatPiPPlayerView` enables `canStartPictureInPictureAutomaticallyFromInline`;
+  `UIBackgroundModes: [audio]` in the app Info.plist is REQUIRED for PiP to
+  survive backgrounding. Don't dismiss the takeover on Continue — a dead
+  player can't float.
+- Loop guard is two-sided: `CatNappingIntent` (Shortcuts If-guard) and the
+  180-second nap check in `handleDeepLink`. Keep the two windows in sync.
+- CI: `.github/workflows/ios-build.yml` builds unsigned for the simulator on
+  macOS runners and screenshots the app launched with `-catbreak-ui-preview`
+  (RootView bypasses the auth gate for that argument only).
