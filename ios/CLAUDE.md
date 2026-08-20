@@ -40,7 +40,9 @@ embeds it but cannot read the numbers (OS sandbox).
 - DeviceActivity: schedules min 15 min; thresholds can fire late; ~20 activity
   limit per app. Don't add per-app activities — keep one daily activity.
 - Shield UI is a fixed template (`ShieldConfiguration`): no video, no custom
-  views. Don't try.
+  views. Don't try. And keep it translucent: `backgroundColor: nil` plus the
+  ultra-thin material is what lets the shielded app show through frosted —
+  an opaque backgroundColor hides it and defeats the see-through design.
 - Cat videos stream from the Supabase bucket in `CatVideoLibrary` (same as
   `background.js`). Anon key is publishable/read-only by design.
 - Distribution requires the Family Controls entitlement from Apple for the app

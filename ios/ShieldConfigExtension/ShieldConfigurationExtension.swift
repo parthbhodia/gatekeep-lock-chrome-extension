@@ -2,9 +2,12 @@ import ManagedSettings
 import ManagedSettingsUI
 import UIKit
 
-/// Styles the full-screen cat takeover. iOS only allows a static template here
-/// (icon + text + up to two buttons) — no video and no custom views, by system
-/// design. The cat VIDEO plays inside the main Cat Break app instead.
+/// Styles the cat cover that iOS draws ON TOP of the shielded app. This is
+/// the one true see-through overlay the platform allows: the system
+/// composites it over the live app itself, so with no background color and
+/// an ultra-thin material the real Instagram stays visible — frosted —
+/// behind the cat. Template limits still apply (icon + text + two buttons;
+/// no video, no custom views).
 class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
     private func catShield() -> ShieldConfiguration {
@@ -14,8 +17,11 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         let showShoo = SharedStore.loadSettings().allowShoo
 
         return ShieldConfiguration(
+            // Translucent by design: nil background + ultra-thin dark material
+            // keeps the shielded app visible underneath. An opaque color here
+            // hides it — see the invariant in ios/CLAUDE.md.
             backgroundBlurStyle: .systemUltraThinMaterialDark,
-            backgroundColor: night,
+            backgroundColor: nil,
             icon: UIImage(named: "shield-cat"),
             title: ShieldConfiguration.Label(text: "Cat break! 🐾", color: cream),
             subtitle: ShieldConfiguration.Label(

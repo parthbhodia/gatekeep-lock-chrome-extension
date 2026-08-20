@@ -115,13 +115,18 @@ with the extension's overlay recreated in the app:
    user shoos, it steps aside into the app.
 2. **Over the limit, the cat lingers** — same overlay, but the countdown runs
    to the end of the break, and Continue only appears afterwards.
-3. **The shield** (`ShieldConfigExtension`) — Apple's enforced full-screen
-   cover guards the app underneath the whole time (static template only:
-   image + text + buttons; Apple allows no video there).
+3. **The shield** (`ShieldConfigExtension`) — Apple's enforced cover guards
+   the app underneath the whole time, and it is the ONE real see-through
+   overlay iOS grants: the system draws it over the live app with a nil
+   background and an ultra-thin material, so Instagram itself stays visible,
+   frosted, behind the cat image, meow line, and buttons (static template
+   only; Apple allows no video there).
 
-What iOS cannot do, honestly: render Instagram's own pixels behind the cat
+What iOS cannot do, honestly: render Instagram's own pixels behind an APP
 (apps are sandboxed; there is no cross-app capture), or float a borderless
-video over another app. The overlay brings its own night backdrop instead.
+video over another app. So the video overlay brings its own night backdrop,
+while the shield — drawn by the system, not by the app — is where the real
+Instagram shows through.
 
 Loop guard: returning to Instagram re-triggers the automation, so the
 `Is the cat napping?` Shortcuts action (`CatNappingIntent`) answers Yes for
