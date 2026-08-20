@@ -5,12 +5,16 @@ struct RootView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
 
-    /// CI/simulator convenience: `simctl launch ... -catbreak-ui-preview`
-    /// shows the tabs without Screen Time authorization (which the simulator
-    /// cannot grant) so the UI can be screenshotted. Monitoring stays off.
+    /// CI/simulator conveniences: `-catbreak-ui-preview` shows the tabs
+    /// without Screen Time authorization (which the simulator cannot grant);
+    /// `-catbreak-overlay-preview` additionally opens the break overlay, so
+    /// CI can screenshot it. Monitoring stays off in both cases.
     private var uiPreview: Bool {
         ProcessInfo.processInfo.arguments.contains("-catbreak-ui-preview")
     }
+
+    @State private var overlayPreview =
+        ProcessInfo.processInfo.arguments.contains("-catbreak-overlay-preview")
 
     var body: some View {
         Group {
@@ -33,7 +37,10 @@ struct RootView: View {
         }
         .onOpenURL { model.handleDeepLink($0) }
         .fullScreenCover(item: $model.takeover) { request in
-            BreakTakeoverView(request: request)
+            CatOverlayView(mode: .greeting(returnURL: request.returnURL))
+        }
+        .fullScreenCover(isPresented: $overlayPreview) {
+            CatOverlayView(mode: .preview)
         }
     }
 }

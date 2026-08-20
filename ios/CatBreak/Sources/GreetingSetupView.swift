@@ -5,6 +5,7 @@ import UIKit
 /// cat take over the screen whenever a watched app (e.g. Instagram) opens —
 /// the closest thing iOS allows to "draw the cat over another app".
 struct GreetingSetupView: View {
+    @EnvironmentObject private var model: AppModel
     @State private var scheme = "instagram"
     @State private var copied = false
 
@@ -13,7 +14,7 @@ struct GreetingSetupView: View {
     var body: some View {
         List {
             Section {
-                Text("iOS never lets one app draw over another. Instead, a one-time Shortcuts automation opens Cat Break the moment Instagram does — the cat video takes the screen, and when you continue, it shrinks into a floating window that rides on top. 🐾")
+                Text("iOS never lets one app draw over another. Instead, a one-time Shortcuts automation opens Cat Break the moment Instagram does — the whole cat walks over the screen under a giant countdown, exactly like the extension's break, then steps aside. 🐾")
                     .font(.callout)
             }
 
@@ -44,14 +45,23 @@ struct GreetingSetupView: View {
                 Label("Add the action “Open URLs” and paste the copied link", systemImage: "link")
             }
 
-            Section("3 · Stop greeting loops (recommended)") {
+            Section {
+                Stepper("Greeting length: \(model.settings.greetSeconds)s",
+                        value: $model.settings.greetSeconds, in: 3...60, step: 1)
+            } header: {
+                Text("3 · How long the cat stays")
+            } footer: {
+                Text("The countdown the cat holds the screen for before letting you through. When you're over your daily limit, the cat lingers for the rest of the break instead.")
+            }
+
+            Section("4 · Stop greeting loops (recommended)") {
                 Text("Returning to Instagram counts as opening it again. Add Cat Break's “Is the cat napping?” action before “Open URLs”, wrapped in an If — only open the link when the answer is No. The cat naps for 3 minutes after each greeting, and Cat Break also bounces straight back if a greeting arrives mid-nap.")
                     .font(.callout)
             }
 
             Section {
-                Label("After Continue, the cat keeps playing in a small floating window over the app — drag it, resize it, or flick it off-screen when you're done.", systemImage: "pip")
-                Label("Greetings are a nudge, not a lock. The daily-limit shield stays the firm backstop.", systemImage: "pawprint")
+                Label("The cat is chroma-keyed out of the video — the whole cat over the screen, no video rectangle.", systemImage: "cat")
+                Label("Greetings are a nudge, not a lock. The daily-limit shield stays the firm backstop underneath.", systemImage: "pawprint")
             } header: {
                 Text("What to expect")
             }

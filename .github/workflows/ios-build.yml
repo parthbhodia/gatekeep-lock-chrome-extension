@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build + simulator screenshot
+    name: Build + simulator screenshots
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -55,21 +55,35 @@ jobs:
           APP_PATH=$(find build/Build/Products -maxdepth 2 -name "CatBreak.app" | head -1)
           echo "Installing $APP_PATH"
           xcrun simctl install "$UDID" "$APP_PATH"
+
           xcrun simctl launch "$UDID" com.catbreak.app -catbreak-ui-preview
           sleep 12
           xcrun simctl io "$UDID" screenshot screenshot.png
           sips -Z 640 screenshot.png --out screenshot-small.png
           echo "===SCREENSHOT_BASE64_START==="
-          base64 -i screenshot-small.png | fold -w 300
+          base64 < screenshot-small.png | tr -d '\n' | fold -w 300
+          echo ""
           echo "===SCREENSHOT_BASE64_END==="
+
+          # Second capture: the break overlay itself (keyed cat + countdown).
+          # Extra settle time so the Supabase video loads and renders a frame.
+          xcrun simctl terminate "$UDID" com.catbreak.app || true
+          xcrun simctl launch "$UDID" com.catbreak.app -catbreak-ui-preview -catbreak-overlay-preview
+          sleep 25
+          xcrun simctl io "$UDID" screenshot overlay.png
+          sips -Z 640 overlay.png --out overlay-small.png
+          echo "===OVERLAY_BASE64_START==="
+          base64 < overlay-small.png | tr -d '\n' | fold -w 300
+          echo ""
+          echo "===OVERLAY_BASE64_END==="
 
       - name: Upload screenshot artifact
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: simulator-screenshot
+          name: simulator-screenshots
           path: |
             ios/screenshot.png
-            ios/screenshot-small.png
+            ios/overlay.png
           if-no-files-found: ignore

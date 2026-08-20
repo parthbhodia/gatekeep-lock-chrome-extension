@@ -57,18 +57,25 @@ embeds it but cannot read the numbers (OS sandbox).
 3. Cross midnight (or set device clock forward) → shields clear, counts reset.
 4. Stats tab shows today's totals for watched apps.
 
-## Greeting takeover + PiP hover (cat on top of Instagram)
+## Greeting overlay (cat on top of Instagram)
 
 - Deep link: `catbreak://break?return=<scheme>` (registered in
   `CatBreak/Info.plist`) → `AppModel.handleDeepLink` → full-screen
-  `BreakTakeoverView`. Set up by the user as a Shortcuts "App Is Opened"
-  automation via `GreetingSetupView` (Settings tab).
-- `CatPiPPlayerView` enables `canStartPictureInPictureAutomaticallyFromInline`;
-  `UIBackgroundModes: [audio]` in the app Info.plist is REQUIRED for PiP to
-  survive backgrounding. Don't dismiss the takeover on Continue — a dead
-  player can't float.
+  `CatOverlayView` (`.greeting` mode). Set up by the user as a Shortcuts
+  "App Is Opened" automation via `GreetingSetupView` (Settings tab).
+- The cat is chroma-keyed: `ChromaKey.swift` ports content.js's
+  getGreenKeyStrength verbatim (0–255 domain) into a 64³ CIColorCube used as
+  an AVVideoComposition; `KeyedPlayerUIView` sets BGRA pixelBufferAttributes
+  on the AVPlayerLayer or the alpha won't render. Keep the constants in sync
+  with content.js if the extension's keying changes.
+- Overlay modes: `.preview` (Cat tab, capped at 3 min), `.greeting` with
+  active break → linger until `SharedStore.breakEndsAt`, else greet for
+  `settings.greetSeconds` then auto-continue.
 - Loop guard is two-sided: `CatNappingIntent` (Shortcuts If-guard) and the
   180-second nap check in `handleDeepLink`. Keep the two windows in sync.
+- `CatBreakSettings` uses decodeIfPresent for every field — adding a field
+  must never wipe stored settings. Preserve that when editing.
 - CI: `.github/workflows/ios-build.yml` builds unsigned for the simulator on
-  macOS runners and screenshots the app launched with `-catbreak-ui-preview`
-  (RootView bypasses the auth gate for that argument only).
+  macOS runners and captures two screenshots: tabs (`-catbreak-ui-preview`)
+  and the overlay (`-catbreak-overlay-preview`). Both launch args bypass the
+  auth gate for UI rendering only.

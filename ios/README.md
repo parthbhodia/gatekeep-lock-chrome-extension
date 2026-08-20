@@ -99,26 +99,34 @@ Then, in Xcode:
 
 ## Getting the cat ON TOP of Instagram
 
-iOS never lets one app draw arbitrary UI over another (there is no
-Android-style overlay permission), so "cat video over Instagram" is built from
-the three mechanisms iOS does sanction — all implemented here:
+iOS never lets one app draw arbitrary UI over another (no Android-style
+overlay permission; the system PiP tile is the only floating video, and it's
+a small, system-controlled box). So the cat takes the WHOLE screen instead,
+with the extension's overlay recreated in the app:
 
-1. **The shield** (`ShieldConfigExtension`) — when the daily limit is hit, the
-   OS itself covers the app full-screen with our cat image, meow line, and
-   buttons. Enforced and unbypassable, but limited to Apple's static template.
-2. **Cat greetings** (`BreakTakeoverView` + `GreetingSetupView`) — a one-time
+1. **Cat greetings** (`CatOverlayView` + `GreetingSetupView`) — a one-time
    Shortcuts personal automation ("When Instagram is opened → Open URL
    `catbreak://break?return=instagram`") flips the screen to Cat Break the
-   moment the app launches and plays the full cat VIDEO. This is the pattern
-   apps like one sec and Opal ship on the App Store.
-3. **The hover** (`CatPiPPlayerView`) — tapping Continue returns to Instagram
-   while the video drops into Picture-in-Picture: a floating cat that
-   literally sits on top of Instagram until the user flicks it away.
+   moment the app launches. The overlay is the extension's break, ported:
+   the chroma-keyed cat — `ChromaKey` bakes content.js's getGreenKeyStrength
+   into a Core Image color cube applied as an AVVideoComposition, so the cat
+   is a true cut-out, not a video rectangle — walks the screen under a giant
+   countdown card. When the countdown ends (greeting length setting) or the
+   user shoos, it steps aside into the app.
+2. **Over the limit, the cat lingers** — same overlay, but the countdown runs
+   to the end of the break, and Continue only appears afterwards.
+3. **The shield** (`ShieldConfigExtension`) — Apple's enforced full-screen
+   cover guards the app underneath the whole time (static template only:
+   image + text + buttons; Apple allows no video there).
 
-Loop guard: returning to Instagram re-triggers the "Is Opened" automation, so
-the `Is the cat napping?` Shortcuts action (`CatNappingIntent`) answers Yes
-for 3 minutes after each greeting, and the deep-link handler bounces straight
-back to the app if a greeting arrives mid-nap. The in-app setup screen
+What iOS cannot do, honestly: render Instagram's own pixels behind the cat
+(apps are sandboxed; there is no cross-app capture), or float a borderless
+video over another app. The overlay brings its own night backdrop instead.
+
+Loop guard: returning to Instagram re-triggers the automation, so the
+`Is the cat napping?` Shortcuts action (`CatNappingIntent`) answers Yes for
+3 minutes after each greeting, and the deep-link handler bounces straight
+back if a greeting arrives mid-nap. The in-app setup screen
 (Settings → Cat greetings) walks the user through all of it.
 
 ## CI: build + simulator screenshot without a Mac
@@ -126,8 +134,9 @@ back to the app if a greeting arrives mid-nap. The in-app setup screen
 `.github/workflows/ios-build.yml` runs on GitHub's macOS runners for every
 push touching `ios/`: XcodeGen → unsigned simulator build → boots a
 simulator, launches the app with the `-catbreak-ui-preview` launch argument
-(skips the Screen Time gate, UI only) and uploads a screenshot as the
-`simulator-screenshot` artifact on the run page. Screen Time behavior itself
+(skips the Screen Time gate, UI only) and captures two screenshots — the tabs and the break overlay itself
+(`-catbreak-overlay-preview`) — uploaded as the `simulator-screenshots`
+artifact on the run page. Screen Time behavior itself
 still needs a real device — the simulator renders the UI but cannot grant
 FamilyControls authorization.
 
