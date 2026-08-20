@@ -117,6 +117,16 @@ Questions or issues? Email `parthbhodia08@gmail.com` with **“Cat Break”** in
 
 ---
 
+## iOS app (work in progress)
+
+A native Swift/SwiftUI port for iPhone lives in [`ios/`](./ios/) — same idea,
+but for apps instead of tabs, built on Apple's Screen Time APIs
+(FamilyControls, DeviceActivity, ManagedSettings). When you hit your limit, a
+cat shield covers the app; the cat videos play inside the Cat Break app. See
+[`ios/README.md`](./ios/README.md) for the build guide and platform caveats.
+
+---
+
 ## License
 
 MIT
