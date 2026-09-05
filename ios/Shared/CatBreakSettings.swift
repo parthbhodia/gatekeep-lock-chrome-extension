@@ -2,6 +2,17 @@ import Foundation
 import FamilyControls
 import ManagedSettings
 
+/// How the Screen Time shield treats the app it covers — the extension's
+/// `.fcb-backdrop` (a faint dark tint, the page sharp behind the cat) or
+/// iOS's frosted material.
+enum ShieldBackdrop: String, Codable, CaseIterable {
+    /// No blur, a translucent tint: Instagram stays sharp behind the cat,
+    /// like the page behind the extension's overlay.
+    case clear
+    /// iOS's thinnest blur: softer, easier to read over bright feeds.
+    case frosted
+}
+
 /// User settings, mirroring the Chrome extension's model
 /// (default limit / per-site overrides / auto-dismiss / random cat).
 struct CatBreakSettings: Codable, Equatable {
@@ -21,6 +32,8 @@ struct CatBreakSettings: Codable, Equatable {
     var catVideoFile: String = "cat-morning-paws.mp4"
     /// Show the "Shoo" button on the cat overlay (ends the break early).
     var allowShoo: Bool = true
+    /// What the shield draws between the cat and the app underneath.
+    var shieldBackdrop: ShieldBackdrop = .clear
     /// Per-app limit overrides in minutes, keyed by the encoded ApplicationToken.
     var perAppLimitMinutes: [String: Int] = [:]
 
@@ -36,6 +49,7 @@ struct CatBreakSettings: Codable, Equatable {
         randomCat = try c.decodeIfPresent(Bool.self, forKey: .randomCat) ?? true
         catVideoFile = try c.decodeIfPresent(String.self, forKey: .catVideoFile) ?? "cat-morning-paws.mp4"
         allowShoo = try c.decodeIfPresent(Bool.self, forKey: .allowShoo) ?? true
+        shieldBackdrop = try c.decodeIfPresent(ShieldBackdrop.self, forKey: .shieldBackdrop) ?? .clear
         perAppLimitMinutes = try c.decodeIfPresent([String: Int].self, forKey: .perAppLimitMinutes) ?? [:]
     }
 }

@@ -78,6 +78,14 @@ enum SharedStore {
         set { defaults.set(newValue?.timeIntervalSince1970 ?? 0, forKey: Key.breakEndsAt) }
     }
 
+    /// Minutes left in the recorded break, rounded up: 0 once it has elapsed,
+    /// nil when no break is on record. The shield shows it as the
+    /// extension's countdown (as far as the static template allows).
+    static var breakMinutesRemaining: Int? {
+        guard let end = breakEndsAt else { return nil }
+        return max(0, Int((end.timeIntervalSinceNow / 60).rounded(.up)))
+    }
+
     // MARK: - Shield copy
 
     /// The monitor extension picks a meow line when the cat arrives; the shield

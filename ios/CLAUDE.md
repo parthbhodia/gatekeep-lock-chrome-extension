@@ -40,9 +40,18 @@ embeds it but cannot read the numbers (OS sandbox).
 - DeviceActivity: schedules min 15 min; thresholds can fire late; ~20 activity
   limit per app. Don't add per-app activities — keep one daily activity.
 - Shield UI is a fixed template (`ShieldConfiguration`): no video, no custom
-  views. Don't try. And keep it translucent: `backgroundColor: nil` plus the
-  ultra-thin material is what lets the shielded app show through frosted —
-  an opaque backgroundColor hides it and defeats the see-through design.
+  views. Don't try. And keep it see-through: `settings.shieldBackdrop`
+  picks `.clear` (no blur style + a translucent tint, alpha 0.35, mirroring
+  content.css's `.fcb-backdrop` so the app stays sharp behind the cat) or
+  `.frosted` (ultra-thin material). Never an opaque `backgroundColor` — it
+  hides the app and defeats the whole design.
+- The shield's title carries the break countdown
+  (`SharedStore.breakMinutesRemaining`); iOS recomputes the configuration
+  each time the shield is shown, so it's right on every open but never
+  ticks. `0` means the break elapsed but nothing lifted the shield (breaks
+  under 15 min can't auto-end): the config shows "Break's over" and
+  `ShieldActionExtension` turns the primary button into "Let me in"
+  (liftAll + re-arm) instead of `.close`.
 - Shield icon comes from baked keyed frames in `shield-cats/` inside the App
   Group (`ShieldCatBaker` bakes in the app; the shield extension only reads
   via `ShieldCatFrames`). The bundled logo is a first-run fallback only.
@@ -61,6 +70,11 @@ embeds it but cannot read the numbers (OS sandbox).
    returns (ladder working).
 3. Cross midnight (or set device clock forward) → shields clear, counts reset.
 4. Stats tab shows today's totals for watched apps.
+5. Over the limit → open the app → the cover shows "N min left" with the app
+   sharp behind it (Clear). If the text is unreadable on a bright feed, flip
+   Settings → "Behind the cat" to Frosted.
+6. Set a 5-min break, wait it out, reopen the app → "Break's over" → "Let me
+   in" lifts the cover without closing the app.
 
 ## Greeting overlay (cat on top of Instagram)
 

@@ -49,7 +49,18 @@ struct SettingsTabView: View {
                 } header: {
                     Text("Cat greetings")
                 } footer: {
-                    Text("A one-time Shortcuts automation opens the cat the moment a watched app launches — full video takeover, then a floating cat hovering over the app.")
+                    Text("A one-time Shortcuts automation flips the screen to the cat the moment a watched app launches — the whole keyed-out cat under the countdown, like the extension's break.")
+                }
+
+                Section {
+                    Picker("Behind the cat", selection: $model.settings.shieldBackdrop) {
+                        Text("Clear, like Chrome").tag(ShieldBackdrop.clear)
+                        Text("Frosted").tag(ShieldBackdrop.frosted)
+                    }
+                } header: {
+                    Text("Cat cover (over the limit)")
+                } footer: {
+                    Text("Once you're over a limit, iOS lays the cat cover over the app the instant it opens, with the app still visible underneath and the minutes left in the break. Clear keeps the app sharp under a faint tint, like the page behind the extension's cat; Frosted blurs it so the text reads easily over bright feeds.")
                 }
 
                 Section {

@@ -75,8 +75,9 @@ Then, in Xcode:
 
 ## Things to know before you judge the cat
 
-- **The shield is a static template.** Icon, title, subtitle, two buttons —
-  that's every pixel iOS lets any third-party app customize. The cat video
+- **The shield is a static template.** Icon, title, subtitle, two buttons,
+  and a backdrop (blur and/or a color) — that's every pixel iOS lets any
+  third-party app customize. No video, no ticking countdown. The cat video
   experience lives in the main app.
 - **Thresholds are not to-the-second.** DeviceActivity events can fire a few
   minutes late. The timer is iOS's own Screen Time accounting (per-app
@@ -115,15 +116,22 @@ with the extension's overlay recreated in the app:
    user shoos, it steps aside into the app.
 2. **Over the limit, the cat lingers** — same overlay, but the countdown runs
    to the end of the break, and Continue only appears afterwards.
-3. **The shield** (`ShieldConfigExtension`) — Apple's enforced cover guards
-   the app underneath the whole time, and it is the ONE real see-through
-   overlay iOS grants: the system draws it over the live app with a nil
-   background and an ultra-thin material, so Instagram itself stays visible,
-   frosted, behind the cat image, meow line, and buttons (static template
-   only; Apple allows no video there). And that image is a REAL cat: the app
-   pre-bakes chroma-keyed stills from the cat videos into the App Group
-   (`ShieldCatBaker`); the shield picks one per break — the bundled logo is
-   only a first-run fallback.
+3. **The shield** (`ShieldConfigExtension`) — the closest thing to the
+   extension's overlay, because it's the ONE real see-through cover iOS
+   grants: once you're over the limit, the system draws it over the live
+   app the instant the app opens (the same "already over the limit? cat."
+   check background.js runs on every tab switch). Its backdrop mirrors
+   content.css's `.fcb-backdrop` — no blur, a faint dark tint — so Instagram
+   itself stays sharp behind the cat image, the minutes left in the break,
+   the meow line, and the buttons (Settings → "Behind the cat" swaps in
+   iOS's frosted material if the tint reads badly over a bright feed).
+   Static template only: Apple allows no video there and the countdown
+   can't tick — it's recomputed each time the shield appears. The image is
+   a REAL cat: the app pre-bakes chroma-keyed stills from the cat videos
+   into the App Group (`ShieldCatBaker`); the shield picks one per break —
+   the bundled logo is only a first-run fallback. When a short break has
+   elapsed but the shield is still up, it says "Break's over" and the
+   button becomes "Let me in".
 
 What iOS cannot do, honestly: render Instagram's own pixels behind an APP
 (apps are sandboxed; there is no cross-app capture), or float a borderless
