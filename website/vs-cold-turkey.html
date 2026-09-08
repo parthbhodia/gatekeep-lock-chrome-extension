@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cat Break vs Cold Turkey — lockout or nudge?</title>
+<meta name="description" content="Cold Turkey enforces blocks at OS level across every browser. Cat Break is a free Chrome nudge. An honest look at when the heavier tool is the right one." />
+<link rel="canonical" href="https://www.catbreak.com/vs-cold-turkey.html" />
+<meta name="robots" content="index, follow" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.catbreak.com/vs-cold-turkey.html" />
+<meta property="og:site_name" content="Cat Break" />
+<meta property="og:title" content="Cat Break vs Cold Turkey — lockout or nudge?" />
+<meta property="og:description" content="Cold Turkey enforces blocks at OS level across every browser. Cat Break is a free Chrome nudge. An honest look at when the heavier tool is the right one." />
+<meta property="og:image" content="https://www.catbreak.com/og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Cat Break vs Cold Turkey — lockout or nudge?" />
+<meta name="twitter:description" content="Cold Turkey enforces blocks at OS level across every browser. Cat Break is a free Chrome nudge. An honest look at when the heavier tool is the right one." />
+<meta name="twitter:image" content="https://www.catbreak.com/og.jpg" />
+
+<link rel="icon" href="icons/icon-32.png" sizes="32x32" />
+<link rel="icon" href="icons/icon-128.png" sizes="128x128" />
+<link rel="apple-touch-icon" href="icons/icon-128.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script src="consent.js"></script>
+
+<!-- Vercel Web Analytics: cookieless and consent-free, so it counts every
+     visitor — including everyone the GA banner never gets an answer from.
+     The stub queues events raised before the script itself lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Install-click tracking, sent to whichever of the two above is available. -->
+<script defer src="analytics.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is Cat Break as strong as Cold Turkey?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, and it isn't trying to be. Cold Turkey enforces blocks at the operating-system level across every browser and can lock you out of your whole computer. Cat Break is a Chrome extension you can dismiss with Esc."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Cat Break free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, entirely, with no paid tier or account. Cold Turkey has a free version that blocks websites plus a one-time paid Pro upgrade."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Cold Turkey work on phones?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. It is a Windows and macOS desktop application. Neither tool covers mobile."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use both?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Some people run Cold Turkey for scheduled deep work and Cat Break as an everyday reminder in between."
+      }
+    }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Cat Break",
+      "item": "https://www.catbreak.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Cat Break vs Cold Turkey",
+      "item": "https://www.catbreak.com/vs-cold-turkey.html"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="/">
+      <img src="icons/icon-48.png" alt="" width="34" height="34" />
+      <span>Cat&nbsp;Break</span>
+    </a>
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=vs-cold-turkey-header" target="_blank" rel="noopener" data-track-cta="vs-cold-turkey-header">
+      Add to Chrome
+    </a>
+  </div>
+</header>
+
+<main class="shell legal">
+  <p class="kicker">Comparison</p>
+  <h1>Cat Break vs Cold Turkey</h1>
+  <p class="article-lede">Cold Turkey is the heaviest enforcement in this category. It runs as a desktop application on Windows and macOS, blocks at the operating-system level across every browser you have, and can lock you out so thoroughly that you cannot uninstall it mid-session. Cat Break is a browser extension that shows you a cat. These are not close relatives.</p>
+
+<div class="verdicts">
+  <div class="verdict">
+    <h3>Pick Cold Turkey if&hellip;</h3>
+    <p>You have already proved to yourself that anything escapable gets escaped. Cold Turkey's paid Pro tier adds app blocking, scheduling and a mode that locks down the entire computer &mdash; enforcement a browser extension is architecturally incapable of matching.</p>
+  </div>
+  <div class="verdict is-ours">
+    <h3>Pick Cat Break if&hellip;</h3>
+    <p>You don't need to be locked out of your own machine, and a per-site timer in the browser where it actually happens is the right size of solution.</p>
+  </div>
+</div>
+<h2>The architectural difference</h2>
+<p>This one isn't about philosophy, it's about where the code runs. Cold Turkey
+is a desktop app, so it sits underneath every browser at once. Switch from Chrome
+to Firefox to get around it and it's still there. A Chrome extension cannot do
+that, ever &mdash; open a different browser and Cat Break is simply not present.
+If you are the kind of person who <em>would</em> open a different browser, that
+matters more than any feature list.</p>
+
+<p>Cold Turkey's free version blocks websites using the same system-level
+enforcement as the paid one; it is a real tool rather than a crippled trial. Pro
+is a one-time purchase (around $39 at the time of writing &mdash; check their site
+for current pricing) and adds application blocking, scheduling, Pomodoro timers,
+and locks that prevent you disabling it until a timer expires.</p>
+
+<p class="pull">Cold Turkey is desktop-only. If your scrolling happens on your
+phone, it can't help you there either.</p>
+
+<h2>What Cat Break does instead</h2>
+<p>Cat Break doesn't try to be un-escapable, because it isn't trying to be a
+security control. It counts the minutes you spend actually focused on a site,
+and when you cross your limit it interrupts &mdash; full screen, video paused,
+countdown running &mdash; then gets out of the way on its own. Press
+<kbd>Esc</kbd> and you're back. The design assumes you want to be reminded, not
+restrained.</p>
+
+<p>That means it installs in two clicks, needs no admin rights, and can't lock
+you out of anything at a bad moment. It also means that if you're determined to
+ignore it, you will, easily. We are not going to pretend otherwise.</p>
+
+<h2>Side by side</h2>
+<div class="cmp-wrap">
+<table class="cmp">
+<thead><tr><th>&nbsp;</th><th>Cold Turkey</th><th>Cat Break</th></tr></thead>
+<tbody>
+<tr><td>Runs as</td><td>Desktop app, Windows and macOS</td><td class="ours">Chrome extension</td></tr>
+<tr><td>Covers other browsers</td><td>Yes, all of them</td><td class="ours">No</td></tr>
+<tr><td>Blocks desktop apps</td><td>Yes, on Pro</td><td class="ours">No</td></tr>
+<tr><td>Can you get past it?</td><td>Not while a lock is active</td><td class="ours">Yes, by design</td></tr>
+<tr><td>Covers your phone</td><td>No</td><td class="ours">No</td></tr>
+<tr><td>Price</td><td>Free tier; one-time Pro purchase</td><td class="ours">Free, no paid tier</td></tr>
+<tr><td>Scheduling</td><td>Yes, on Pro</td><td class="ours">No</td></tr>
+<tr><td>Time counted</td><td>Session and schedule based</td><td class="ours">Only focused, active-tab time</td></tr>
+<tr><td>Playing video</td><td>Site blocked</td><td class="ours">Paused, then resumed</td></tr>
+<tr><td>Install friction</td><td>Desktop install, system permissions</td><td class="ours">Two clicks in the Web Store</td></tr>
+<tr><td>Open source</td><td>No</td><td class="ours">Yes, MIT</td></tr>
+</tbody>
+</table>
+</div>
+<h2>Which one is actually right for you</h2>
+<p>Ask what happened the last time something got in your way. If you found a
+workaround within a minute &mdash; a different browser, disabling the extension,
+uninstalling it &mdash; then you need enforcement that sits below the browser,
+and that is Cold Turkey, not us. If instead you have never really tried anything
+and want the lightest thing that might work, starting with a system-level lockout
+is like fitting a deadbolt before trying a doorbell.</p>
+
+<h2>The honest summary</h2>
+<p>Cold Turkey is stronger, broader, and harder to escape, and for some people
+that is exactly and only what works. Cat Break is smaller, free, and lives in the
+one place most of this actually happens. Try the light one first; if you route
+around it in a week, you have learned something useful about which tool you
+need.</p>
+
+<h2>Questions</h2>
+<div class="faq-list">
+  <details>
+    <summary>Is Cat Break as strong as Cold Turkey?</summary>
+    <p>No, and it isn't trying to be. Cold Turkey enforces blocks at the operating-system level across every browser and can lock you out of your whole computer. Cat Break is a Chrome extension you can dismiss with Esc.</p>
+  </details>
+  <details>
+    <summary>Is Cat Break free?</summary>
+    <p>Yes, entirely, with no paid tier or account. Cold Turkey has a free version that blocks websites plus a one-time paid Pro upgrade.</p>
+  </details>
+  <details>
+    <summary>Does Cold Turkey work on phones?</summary>
+    <p>No. It is a Windows and macOS desktop application. Neither tool covers mobile.</p>
+  </details>
+  <details>
+    <summary>Can I use both?</summary>
+    <p>Yes. Some people run Cold Turkey for scheduled deep work and Cat Break as an everyday reminder in between.</p>
+  </details>
+</div>
+
+
+  <div class="article-cta">
+    <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=vs-cold-turkey-cta" target="_blank" rel="noopener" data-track-cta="vs-cold-turkey-cta">
+      Add Cat Break to Chrome — it’s free
+    </a>
+    <p>Free forever · No account · Nothing leaves your device · MIT licensed</p>
+  </div>
+
+  <h2>Keep reading</h2>
+  <div class="more-links">
+    <a href="vs-freedom.html">vs Freedom</a>
+    <a href="vs-stayfocusd.html">vs StayFocusd</a>
+    <a href="limit-youtube-time-chrome.html">Limit YouTube time in Chrome</a>
+  </div>
+
+  <p class="legal-back"><a href="/">← Back to catbreak.com</a></p>
+</main>
+
+<footer class="footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <img src="icons/icon-48.png" alt="" width="30" height="30" />
+      <span>Cat Break</span>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=vs-cold-turkey-footer" target="_blank" rel="noopener" data-track-cta="vs-cold-turkey-footer">Chrome Web Store</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" data-cookie-settings>Cookie settings</a>
+      <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">Contact</a>
+    </nav>
+    <p class="footer-legal">© <span id="year">2026</span> catbreak.com · Made for people who meant to close the tab.</p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = String(new Date().getFullYear());</script>
+</body>
+</html>

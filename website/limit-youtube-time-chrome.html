@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to limit YouTube time in Chrome — Cat Break</title>
+<meta name="description" content="Four ways to limit YouTube time in Chrome, plus the two things most tools get wrong: counting background tabs, and failing to pause autoplay." />
+<link rel="canonical" href="https://www.catbreak.com/limit-youtube-time-chrome.html" />
+<meta name="robots" content="index, follow" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.catbreak.com/limit-youtube-time-chrome.html" />
+<meta property="og:site_name" content="Cat Break" />
+<meta property="og:title" content="How to limit YouTube time in Chrome" />
+<meta property="og:description" content="Four ways to limit YouTube time in Chrome, plus the two things most tools get wrong: counting background tabs, and failing to pause autoplay." />
+<meta property="og:image" content="https://www.catbreak.com/og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="How to limit YouTube time in Chrome" />
+<meta name="twitter:description" content="Four ways to limit YouTube time in Chrome, plus the two things most tools get wrong: counting background tabs, and failing to pause autoplay." />
+<meta name="twitter:image" content="https://www.catbreak.com/og.jpg" />
+
+<link rel="icon" href="icons/icon-32.png" sizes="32x32" />
+<link rel="icon" href="icons/icon-128.png" sizes="128x128" />
+<link rel="apple-touch-icon" href="icons/icon-128.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script src="consent.js"></script>
+
+<!-- Vercel Web Analytics: cookieless and consent-free, so it counts every
+     visitor — including everyone the GA banner never gets an answer from.
+     The stub queues events raised before the script itself lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Install-click tracking, sent to whichever of the two above is available. -->
+<script defer src="analytics.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does YouTube have a built-in time limit?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It has reminder features rather than a hard limit: a 'Take a break' reminder and a bedtime reminder in settings. They prompt you but do not block access or stop playback."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I limit YouTube without blocking it completely?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. A per-site time limit lets you use YouTube normally until you reach your allowance for the day, rather than blocking it outright."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do background YouTube tabs count towards my limit in Cat Break?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. The timer only runs while the tab is the active, focused one, so a YouTube tab left open behind your work does not consume your allowance."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will an extension pause the video when the limit is reached?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Cat Break does, including YouTube's shadow-DOM player, and mutes the tab if a page refuses to pause. Many tools do not, which is worth checking before you rely on one."
+      }
+    }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Cat Break",
+      "item": "https://www.catbreak.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "How to limit your YouTube time in Chrome",
+      "item": "https://www.catbreak.com/limit-youtube-time-chrome.html"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="/">
+      <img src="icons/icon-48.png" alt="" width="34" height="34" />
+      <span>Cat&nbsp;Break</span>
+    </a>
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=limit-youtube-time-chrome-header" target="_blank" rel="noopener" data-track-cta="limit-youtube-time-chrome-header">
+      Add to Chrome
+    </a>
+  </div>
+</header>
+
+<main class="shell legal">
+  <p class="kicker">Guide</p>
+  <h1>How to limit your YouTube time in Chrome</h1>
+  <p class="article-lede">YouTube is the hardest site to time-limit, for two reasons most tools handle badly: it plays in background tabs, and the next video starts by itself. Here are the options that exist, and what each one gets right.</p>
+
+<h2>Option 1: YouTube's own reminder</h2>
+<p>YouTube has a built-in &ldquo;Take a break&rdquo; reminder, and it costs
+nothing to switch on. In YouTube's settings, under General, you'll find reminder
+options plus a bedtime reminder.</p>
+
+<p>It's the lowest-effort option and worth enabling regardless. The limitation is
+that it's a dismissable overlay inside a site whose whole business is keeping you
+there, it only covers YouTube, and it doesn't stop playback. Most people click
+through it without registering that they did.</p>
+
+<h2>Option 2: A per-site limit in a Chrome extension</h2>
+<p>This is the approach that fits YouTube best, because you can give it a
+different allowance from everything else &mdash; 45 minutes for YouTube while
+leaving your docs and mail untouched. Any of the extensions in this category can
+do it; they differ in what happens when you hit the limit, which is covered
+below.</p>
+
+<h2>Option 3: Block it outright during certain hours</h2>
+<p>If YouTube has no legitimate place in your working day, a scheduled block is
+simpler than a time limit. Tools like
+<a href="vs-leechblock.html">LeechBlock NG</a> and
+<a href="vs-stayfocusd.html">StayFocusd</a> support time-of-day rules, and
+<a href="vs-cold-turkey.html">Cold Turkey</a> enforces them across every browser
+at once.</p>
+
+<h2>Option 4: Cut the recommendations instead of the time</h2>
+<p>Worth knowing because it addresses a different failure. Plenty of people don't
+overrun on the video they came for &mdash; they overrun on the six the sidebar
+suggested afterwards. Extensions exist that hide the homepage feed, the sidebar
+and Shorts, leaving search and subscriptions working. If you arrive with a
+purpose and leave with none, that may be a better fix than a timer.</p>
+
+<h2>The two things most tools get wrong</h2>
+
+<h3>Background tabs</h3>
+<p>Leave a YouTube tab open behind your work and many trackers keep counting it.
+You get told you spent three hours on YouTube when you spent forty minutes, the
+number is obviously wrong, and you stop trusting the tool. Look for something that
+counts only the time a tab is <strong>focused</strong> &mdash; that's the
+difference between a number you act on and a number you dismiss.</p>
+
+<h3>Autoplay</h3>
+<p>A reminder that appears while the video keeps playing isn't a break. YouTube's
+player is also awkward to control from an extension because it sits inside shadow
+DOM, so plenty of tools simply don't try. If playback doesn't stop, you'll read
+the message and keep watching.</p>
+
+<p class="pull">If it doesn't pause the video, it isn't a break. It's a subtitle.</p>
+
+<h2>Setting a YouTube limit with Cat Break</h2>
+<p><a href="/">Cat Break</a> is a free Chrome extension built around both of those
+problems. To set a YouTube-specific limit:</p>
+
+<ul>
+  <li>Install it from the Chrome Web Store and open the popup from your toolbar.</li>
+  <li>Set a default limit &mdash; anything from 15 minutes up to 600.</li>
+  <li>Under <strong>Limit by site</strong>, add <code>youtube.com</code> with its
+      own number. A per-site limit overrides the default.</li>
+  <li>Optionally add the sites you never want timed, like your mail or your docs,
+      under <strong>Excluded sites</strong>. Or turn on
+      <strong>list-only mode</strong> so nothing except the domains you named is
+      timed at all.</li>
+  <li>Choose how long the break lasts. It clears itself when the countdown ends.</li>
+</ul>
+
+<p>When you cross the limit a cat walks onto the page and the video pauses
+&mdash; including YouTube's shadow-DOM player, and if a page refuses to pause,
+the tab is muted instead. Playback resumes afterwards. Background tabs never
+count against you, because the timer only runs while the tab is focused. Press
+<kbd>Esc</kbd> if you genuinely need to keep going; it's a nudge, not a lock.</p>
+
+<p>Nothing about this leaves your machine: no account, no server, no sync. The
+only network request the extension makes is fetching the cat video itself.</p>
+
+<h2>Which to choose</h2>
+<p>Turn on YouTube's own reminder today &mdash; it's free and takes a minute. If
+that isn't enough, add a per-site limit in an extension. If you route around that
+too, move up to scheduled blocking or
+<a href="vs-cold-turkey.html">system-level enforcement</a>. Start light; you'll
+learn quickly which level you actually need.</p>
+
+<h2>Questions</h2>
+<div class="faq-list">
+  <details>
+    <summary>Does YouTube have a built-in time limit?</summary>
+    <p>It has reminder features rather than a hard limit: a 'Take a break' reminder and a bedtime reminder in settings. They prompt you but do not block access or stop playback.</p>
+  </details>
+  <details>
+    <summary>Can I limit YouTube without blocking it completely?</summary>
+    <p>Yes. A per-site time limit lets you use YouTube normally until you reach your allowance for the day, rather than blocking it outright.</p>
+  </details>
+  <details>
+    <summary>Do background YouTube tabs count towards my limit in Cat Break?</summary>
+    <p>No. The timer only runs while the tab is the active, focused one, so a YouTube tab left open behind your work does not consume your allowance.</p>
+  </details>
+  <details>
+    <summary>Will an extension pause the video when the limit is reached?</summary>
+    <p>Cat Break does, including YouTube's shadow-DOM player, and mutes the tab if a page refuses to pause. Many tools do not, which is worth checking before you rely on one.</p>
+  </details>
+</div>
+
+
+  <div class="article-cta">
+    <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=limit-youtube-time-chrome-cta" target="_blank" rel="noopener" data-track-cta="limit-youtube-time-chrome-cta">
+      Add Cat Break to Chrome — it’s free
+    </a>
+    <p>Free forever · No account · Nothing leaves your device · MIT licensed</p>
+  </div>
+
+  <h2>Keep reading</h2>
+  <div class="more-links">
+    <a href="how-to-stop-doomscrolling.html">How to stop doomscrolling</a>
+    <a href="vs-leechblock.html">Cat Break vs LeechBlock NG</a>
+    <a href="vs-stayfocusd.html">Cat Break vs StayFocusd</a>
+  </div>
+
+  <p class="legal-back"><a href="/">← Back to catbreak.com</a></p>
+</main>
+
+<footer class="footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <img src="icons/icon-48.png" alt="" width="30" height="30" />
+      <span>Cat Break</span>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=limit-youtube-time-chrome-footer" target="_blank" rel="noopener" data-track-cta="limit-youtube-time-chrome-footer">Chrome Web Store</a>
+      <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" data-cookie-settings>Cookie settings</a>
+      <a href="mailto:parthbhodia08@gmail.com?subject=Cat%20Break">Contact</a>
+    </nav>
+    <p class="footer-legal">© <span id="year">2026</span> catbreak.com · Made for people who meant to close the tab.</p>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = String(new Date().getFullYear());</script>
+</body>
+</html>
