@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Privacy Policy — Cat Break</title>
-<meta name="description" content="What Cat Break does and does not collect. The extension stores everything locally and reports nothing. The catbreak.com website uses Google Analytics." />
+<meta name="description" content="What Cat Break does and does not collect. The extension stores everything locally and reports nothing. The catbreak.com website uses Google Analytics and Vercel Web Analytics." />
 <link rel="canonical" href="https://www.catbreak.com/privacy.html" />
 <meta name="robots" content="index, follow" />
 
@@ -12,7 +12,7 @@
 <meta property="og:url" content="https://www.catbreak.com/privacy.html" />
 <meta property="og:site_name" content="Cat Break" />
 <meta property="og:title" content="Privacy Policy — Cat Break" />
-<meta property="og:description" content="The extension stores everything locally and reports nothing. The website uses Google Analytics." />
+<meta property="og:description" content="The extension stores everything locally and reports nothing. The website uses Google Analytics and Vercel Web Analytics." />
 <meta property="og:image" content="https://www.catbreak.com/og.jpg" />
 
 <link rel="icon" href="icons/icon-32.png" sizes="32x32" />
@@ -25,6 +25,15 @@
 <link rel="stylesheet" href="styles.css" />
 
 <script src="consent.js"></script>
+
+<!-- Vercel Web Analytics: cookieless and consent-free, so it counts every
+     visitor — including everyone the GA banner never gets an answer from.
+     The stub queues events raised before the script itself lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Install-click tracking, sent to whichever of the two above is available. -->
+<script defer src="analytics.js"></script>
 </head>
 <body>
 <div class="grain" aria-hidden="true"></div>
@@ -35,7 +44,7 @@
       <img src="icons/icon-48.png" alt="" width="34" height="34" />
       <span>Cat&nbsp;Break</span>
     </a>
-    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=privacy-header" target="_blank" rel="noopener" data-track-cta="privacy-header">
       Add to Chrome
     </a>
   </div>
@@ -47,7 +56,7 @@
   <p class="legal-meta">Last updated 31 July 2026</p>
 
   <div class="legal-callout">
-    <p><strong>The short version.</strong> The Cat Break extension collects nothing about you — your settings and time totals never leave your browser. This website, catbreak.com, is a separate thing: it uses Google Analytics to count visits. Those two are unrelated, and the website's analytics can never see what you browse.</p>
+    <p><strong>The short version.</strong> The Cat Break extension collects nothing about you — your settings and time totals never leave your browser. This website, catbreak.com, is a separate thing: it uses Google Analytics and Vercel Web Analytics to count visits. The extension and the website are unrelated, and the website's analytics can never see what you browse.</p>
   </div>
 
   <h2>1. The extension</h2>
@@ -79,6 +88,11 @@
   <p>We use this only to understand traffic to the site. We do not sell it, and we do not use it to build advertising profiles. Google processes this data as described in <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</p>
   <p><strong>To opt out:</strong> install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's opt-out browser add-on</a>, enable your browser's tracking protection, or block <code>googletagmanager.com</code>. Blocking it has no effect on the extension, which does not use analytics at all.</p>
 
+  <h3>Vercel Web Analytics</h3>
+  <p>catbreak.com also uses Vercel Web Analytics. It counts page views without cookies and without storing anything on your device, so there is nothing for the cookie banner to ask permission for and it runs for every visitor. It records the page viewed, the referring site, and coarse device, browser and country information derived from the request. It cannot follow you to any other website.</p>
+  <p>We use it for one thing: an honest count of how many people reach this site, which Google Analytics cannot give us once the banner is declined or ignored. It also records clicks on the &ldquo;Add to Chrome&rdquo; buttons, so we can tell what fraction of visitors go on to the Chrome Web Store. Vercel processes this data as described in <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel&rsquo;s privacy policy</a>.</p>
+  <p><strong>To opt out:</strong> block <code>/_vercel/insights/</code>, which most content blockers already do. As with Google Analytics, blocking it has no effect on the extension.</p>
+
   <h3>Fonts and hosting</h3>
   <p>The site loads fonts from Google Fonts and is hosted on Vercel. Both receive your IP address as a normal consequence of serving the page.</p>
 
@@ -109,7 +123,7 @@
       <span>Cat Break</span>
     </div>
     <nav class="footer-links" aria-label="Footer">
-      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=privacy-footer" target="_blank" rel="noopener" data-track-cta="privacy-footer">Chrome Web Store</a>
       <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>

@@ -25,6 +25,15 @@
 <link rel="stylesheet" href="styles.css" />
 
 <script src="consent.js"></script>
+
+<!-- Vercel Web Analytics: cookieless and consent-free, so it counts every
+     visitor — including everyone the GA banner never gets an answer from.
+     The stub queues events raised before the script itself lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Install-click tracking, sent to whichever of the two above is available. -->
+<script defer src="analytics.js"></script>
 </head>
 <body>
 <div class="grain" aria-hidden="true"></div>
@@ -35,7 +44,7 @@
       <img src="icons/icon-48.png" alt="" width="34" height="34" />
       <span>Cat&nbsp;Break</span>
     </a>
-    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=terms-header" target="_blank" rel="noopener" data-track-cta="terms-header">
       Add to Chrome
     </a>
   </div>
@@ -100,7 +109,7 @@
       <span>Cat Break</span>
     </div>
     <nav class="footer-links" aria-label="Footer">
-      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=terms-footer" target="_blank" rel="noopener" data-track-cta="terms-footer">Chrome Web Store</a>
       <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
