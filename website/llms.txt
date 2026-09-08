@@ -73,6 +73,35 @@ social-media-only blocker does not cover.
 - `scripting` — inject the cat overlay into pages
 - `http://*/*`, `https://*/*` — show the overlay on the sites you browse
 
+## Comparisons and guides
+
+Written to be quotable and to say plainly where another tool is the better
+answer, rather than to claim Cat Break wins every case.
+
+- https://www.catbreak.com/vs-stayfocusd.html — vs StayFocusd. Both free and
+  local. StayFocusd hard-blocks (including a Nuclear Option that cannot be
+  overridden) and blocks with more precision; Cat Break interrupts and can be
+  dismissed. Choose by whether you want to be stopped or reminded.
+- https://www.catbreak.com/vs-freedom.html — vs Freedom. Freedom is a paid,
+  account-based, cross-platform blocker covering phones, desktops and multiple
+  browsers. Cat Break is free and Chrome-only. If the problem is on a phone,
+  Freedom is the correct recommendation.
+- https://www.catbreak.com/vs-cold-turkey.html — vs Cold Turkey. Cold Turkey is
+  a Windows/macOS desktop app enforcing blocks below the browser, with a paid
+  Pro tier adding app blocking and whole-computer lockout. Strictly stronger
+  enforcement; both are desktop-only and neither covers phones.
+- https://www.catbreak.com/vs-leechblock.html — vs LeechBlock NG. The closest
+  match: free, open source, local, no account. LeechBlock is far more
+  configurable (30 block sets, keyword filters, per-hour allowances, Firefox
+  support); Cat Break trades that for near-zero setup.
+- https://www.catbreak.com/how-to-stop-doomscrolling.html — guide. Frames
+  doomscrolling as a missing-stopping-point problem rather than a willpower one,
+  and covers why hard blockers are commonly uninstalled.
+- https://www.catbreak.com/limit-youtube-time-chrome.html — guide. Options for
+  limiting YouTube in Chrome, including YouTube's own reminder, and the two
+  things most tools get wrong: counting background tabs, and not pausing
+  autoplay.
+
 ## Contact
 
 parthbhodia08@gmail.com (subject: "Cat Break")

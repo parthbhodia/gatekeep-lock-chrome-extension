@@ -856,3 +856,100 @@ body.demo-open { overflow: hidden; }
   .reveal, .on-scroll { opacity: 1; transform: none; }
   .marquee-track { animation: none; }
 }
+
+/* ── Article pages: comparisons and guides ───────────────────────────────── */
+
+/* These reuse .legal for the base type scale — same measure, same rhythm as the
+   policy pages — and add the pieces those pages never needed: a table, verdict
+   cards, and a pull-quote for the one line that answers the page's question. */
+
+.legal .article-lede {
+  font-size: 1.12rem; color: var(--ink-soft);
+  margin-bottom: 30px; line-height: 1.65;
+}
+
+/* Wide tables must scroll inside their own box; the page itself never does. */
+.cmp-wrap {
+  overflow-x: auto;
+  margin: 8px 0 26px;
+  border: 1px solid var(--card-edge);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+.cmp {
+  border-collapse: collapse;
+  width: 100%; min-width: 580px;
+  font-size: .95rem;
+}
+.cmp th, .cmp td {
+  text-align: left; padding: 13px 16px;
+  border-bottom: 1px solid rgba(255, 147, 112, .14);
+  vertical-align: top;
+}
+.cmp thead th {
+  font-family: var(--display); font-weight: 600;
+  color: var(--ink); background: var(--cream-deep);
+  white-space: nowrap;
+}
+.cmp thead th:first-child { border-top-left-radius: var(--r-md); }
+.cmp thead th:last-child { border-top-right-radius: var(--r-md); }
+.cmp tbody tr:last-child td { border-bottom: 0; }
+.cmp td:first-child { font-weight: 700; color: var(--ink); }
+.cmp .ours { background: rgba(255, 201, 168, .16); }
+
+/* Two honest recommendations, side by side. The competitor card comes first on
+   purpose: a comparison that never sends anyone elsewhere reads as a pitch. */
+.verdicts {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  margin: 4px 0 30px;
+}
+.verdict {
+  background: var(--card); border: 1px solid var(--card-edge);
+  border-radius: var(--r-md); padding: 20px 22px;
+  box-shadow: var(--shadow-soft);
+}
+.verdict.is-ours { border-color: var(--coral); background: var(--cream-deep); }
+.verdict h3 {
+  font-family: var(--display); font-size: 1.02rem;
+  margin: 0 0 8px; color: var(--ink);
+}
+.verdict p { margin: 0; font-size: .95rem; color: var(--ink-soft); }
+
+.pull {
+  border-left: 3px solid var(--coral);
+  padding: 4px 0 4px 18px; margin: 26px 0;
+  font-family: var(--display); font-size: 1.1rem;
+  font-weight: 500; color: var(--ink); line-height: 1.5;
+}
+
+.legal .article-cta {
+  margin: 36px 0 8px; padding: 26px;
+  background: var(--cream-deep); border: 1px solid var(--card-edge);
+  border-radius: var(--r-lg); text-align: center;
+}
+.legal .article-cta p { margin: 12px 0 0; font-size: .9rem; color: var(--muted); }
+
+/* Related reading, so a guide is never a dead end for reader or crawler. */
+.more-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.more-links a {
+  background: var(--card); border: 1px solid var(--card-edge);
+  border-radius: var(--pill); padding: 8px 15px;
+  font-size: .9rem; font-weight: 700; text-decoration: none;
+  color: var(--coral-deep);
+}
+.more-links a:hover { color: var(--ink); border-color: var(--coral); }
+
+@media (max-width: 620px) {
+  .legal .article-cta { padding: 22px 18px; }
+}
+
+/* ── Comparisons and guides, linked from the homepage ────────────────────── */
+
+/* The comparison and guide pages are reachable from here as well as the footer:
+   a page only linked from a footer reads as boilerplate to a crawler. */
+.reading { padding: clamp(40px, 6vw, 70px) 0 clamp(10px, 2vw, 20px); }
+.reading-inner { text-align: center; }
+.reading .more-links { justify-content: center; margin-top: 22px; }
+.reading .more-links a { background: var(--card); box-shadow: var(--shadow-soft); }
