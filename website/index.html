@@ -38,6 +38,15 @@
      still reports nothing anywhere. See privacy.html. -->
 <script src="consent.js"></script>
 
+<!-- Vercel Web Analytics: cookieless and consent-free, so it counts every
+     visitor — including everyone the GA banner never gets an answer from.
+     The stub queues events raised before the script itself lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Install-click tracking, sent to whichever of the two above is available. -->
+<script defer src="analytics.js"></script>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -80,7 +89,7 @@
     {
       "@type": "Question",
       "name": "What data does Cat Break collect?",
-      "acceptedAnswer": { "@type": "Answer", "text": "The extension collects nothing. Settings and daily totals live in chrome.storage on your own machine, with no server, no account, no sync and no analytics. The only thing it fetches is the cat video itself. The catbreak.com website is separate and uses Google Analytics to count visits; that applies to the marketing site only and never to your browsing inside the extension." }
+      "acceptedAnswer": { "@type": "Answer", "text": "The extension collects nothing. Settings and daily totals live in chrome.storage on your own machine, with no server, no account, no sync and no analytics. The only thing it fetches is the cat video itself. The catbreak.com website is separate and uses Google Analytics and Vercel Web Analytics to count visits; that applies to the marketing site only and never to your browsing inside the extension." }
     },
     {
       "@type": "Question",
@@ -133,7 +142,7 @@
       <a href="#cats">The cats</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+    <a class="btn btn-primary btn-sm" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=header" target="_blank" rel="noopener" data-track-cta="header">
       Add to Chrome
     </a>
   </div>
@@ -164,7 +173,7 @@
       </p>
 
       <div class="cta-row reveal" style="--d:220ms">
-        <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+        <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=hero" target="_blank" rel="noopener" data-track-cta="hero">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 1 8.66 5H12a5 5 0 0 0-4.9 4.02L3.5 4.9A10 10 0 0 1 12 2Zm9.5 5.53A10 10 0 0 1 12 22l4.06-7.03A4.98 4.98 0 0 0 17 12a4.98 4.98 0 0 0-.72-2.58h5.22ZM2.4 7.06 6.46 14.1A5 5 0 0 0 11.2 17l-3.6 4.6A10 10 0 0 1 2.4 7.06ZM12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z"/></svg>
           Add to Chrome — it’s free
         </a>
@@ -447,7 +456,7 @@
       <details>
         <summary>What data do you collect?</summary>
         <p><strong>The extension collects nothing.</strong> Settings and daily totals live in <code>chrome.storage</code> on your own machine — no server, no account, no sync, no analytics. The only thing it fetches is the cat video itself.</p>
-        <p><strong>This website is separate.</strong> catbreak.com uses Google Analytics to count visits and see which pages people read. That’s the marketing site only — it has no connection to the extension, which never reports your browsing anywhere. Details in the <a href="privacy.html">privacy policy</a>.</p>
+        <p><strong>This website is separate.</strong> catbreak.com uses Google Analytics and Vercel Web Analytics to count visits and see which pages people read. That’s the marketing site only — it has no connection to the extension, which never reports your browsing anywhere. Details in the <a href="privacy.html">privacy policy</a>.</p>
       </details>
       <details>
         <summary>Does it work on every site?</summary>
@@ -482,7 +491,7 @@
     <div class="final-copy">
       <h2>Go outside. The cat insists.</h2>
       <p>Two clicks to install. Roughly forty seconds to set up. Then it just lives there, quietly counting.</p>
-      <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">
+      <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=final-cta" target="_blank" rel="noopener" data-track-cta="final-cta">
         Add to Chrome — it’s free
       </a>
       <p class="final-note">Free forever · No account · Works on any site</p>
@@ -499,7 +508,7 @@
       <span>Cat Break</span>
     </div>
     <nav class="footer-links" aria-label="Footer">
-      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh" target="_blank" rel="noopener">Chrome Web Store</a>
+      <a href="https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh?utm_source=catbreak.com&amp;utm_medium=website&amp;utm_campaign=install&amp;utm_content=footer" target="_blank" rel="noopener" data-track-cta="footer">Chrome Web Store</a>
       <a href="https://github.com/parthbhodia/gatekeep-lock-chrome-extension" target="_blank" rel="noopener">Source</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
