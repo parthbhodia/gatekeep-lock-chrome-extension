@@ -27,7 +27,7 @@ No cloud sync, no account, no ads — everything stays on your device.
 2. Click the **Cat Break** icon to open the popup (**Cat** and **Settings** tabs).
 3. **Cat tab:** set your **default time limit**, **auto-dismiss** duration, **random cat** (optional), pick a **cat video**, and **Preview on this tab** to try it.
 4. **Settings tab:** add **Limit by site** overrides, **Excluded sites**, and optionally turn on **Only limit sites on the list below** (only listed domains are timed).
-5. Browse normally — Cat Break runs in the background. When time’s up, the cat appears. Wait it out, or **shoo** it away / use **Esc** when supported.
+5. Browse normally — Cat Break runs in the background. When time’s up, the cat appears. Wait it out, or end it early by **holding Esc** (or the **Shoo** button) for 10 seconds.
 
 Per-site and exclusion options live under **Settings**; the **Cat** tab focuses on timing, the break experience, and preview.
 

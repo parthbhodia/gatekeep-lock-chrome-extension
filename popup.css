@@ -935,6 +935,8 @@ body {
 }
 
 .shoo-cat-btn {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   margin-top: 9px;
   border: 2px dashed rgba(255, 123, 84, 0.45);
@@ -956,6 +958,29 @@ body {
 
 .shoo-cat-btn.is-hidden {
   display: none;
+}
+
+/* Hold progress. scaleX is set from rAF in popup.js, so there is no CSS
+   transition on it — one would trail the real progress and keep sliding after
+   the button is released. */
+.shoo-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 147, 112, 0.4), rgba(240, 96, 63, 0.4));
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.shoo-label {
+  position: relative; /* keeps the text above the fill */
+}
+
+.shoo-cat-btn.is-holding {
+  border-style: solid;
+  border-color: var(--coral);
+  background: #fff6f0;
 }
 
 .preview-msg {

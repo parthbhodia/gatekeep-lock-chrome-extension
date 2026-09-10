@@ -247,3 +247,84 @@
   font-weight: 600 !important;
 }
 
+
+/* ── Hold to shoo ──────────────────────────────────────────────────────────── */
+
+/* The hint sits on screen from the moment the break appears, not only once a
+   hold starts. Esc used to end the break on a single tap, so someone who taps
+   it and sees nothing happen needs to be told what changed — otherwise the
+   overlay just reads as broken. */
+.fcb-hold {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 30px !important;
+  z-index: 6 !important;
+  width: min(340px, 76vw) !important;
+  padding: 12px 16px 13px !important;
+  box-sizing: border-box !important;
+  transform: translateX(-50%) translateY(6px) !important;
+  border-radius: 14px !important;
+  background: rgba(245, 244, 243, 0.94) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease 0.6s, transform 0.3s ease 0.6s !important;
+}
+
+#fcb-overlay.fcb-in .fcb-hold {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+.fcb-hold-track {
+  height: 6px !important;
+  border-radius: 999px !important;
+  background: rgba(61, 53, 80, 0.13) !important;
+  overflow: hidden !important;
+}
+
+/* scaleX is driven from rAF in content.js, so no CSS duration here — a
+   transition would lag the real progress and keep animating after release. */
+.fcb-hold-fill {
+  height: 100% !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #ff9370, #f0603f) !important;
+  transform: scaleX(0) !important;
+  transform-origin: left center !important;
+}
+
+.fcb-hold-label {
+  margin: 9px 0 0 !important;
+  text-align: center !important;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #3d3550 !important;
+  line-height: 1.35 !important;
+}
+
+.fcb-kbd {
+  display: inline-block !important;
+  padding: 1px 6px 2px !important;
+  margin: 0 1px !important;
+  border-radius: 5px !important;
+  border: 1px solid rgba(61, 53, 80, 0.22) !important;
+  border-bottom-width: 2px !important;
+  background: #fff !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #3d3550 !important;
+}
+
+/* While holding, lift the panel so it reads as the thing being acted on. */
+.fcb-hold-active {
+  background: #fff !important;
+  border-color: rgba(255, 123, 84, 0.5) !important;
+  box-shadow: 0 14px 40px rgba(240, 96, 63, 0.3) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fcb-hold { transition: opacity 0.2s ease !important; }
+}

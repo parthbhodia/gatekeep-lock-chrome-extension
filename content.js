@@ -17,9 +17,20 @@ let dialogHideTimer = null;
 let pausedVideos = [];
 let tabMuteAppliedByUs = false;
 let keydownHandler = null;
+let keyupHandler = null;
+let holdAbortHandler = null;
+let holdRafId = null;
+let holdStartedAt = 0;
+let holdEls = null;
 const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
+/* Shooing is deliberately effortful. A single tap of Esc used to end the break
+   instantly, which made dismissing it reflexive — the thing the break exists to
+   interrupt. Holding for the full duration is long enough that you have to
+   actually decide to do it. Let go early and it resets to zero. */
+const SHOO_HOLD_MS = 10 * 1000;
+const HOLD_IDLE_HTML = 'Hold <b class="fcb-kbd">Esc</b> to shoo the cat away';
 const DEFAULT_CAT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const BRIDAL_TIPS_VIDEO_FILE = 'cat-elegant-steps.mp4';
 const STREET_STRUT_VIDEO_FILE = 'cat-street-strut.mp4';
@@ -168,6 +179,10 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
       <p class="fcb-body">This cat wants you to take a break. You have been on <strong>${escapeHTML(domain)}</strong> for <strong>${escapeHTML(durationPhrase)}</strong>.</p>
       <p class="fcb-body fcb-body-limit">Your time limit here is <strong>${escapeHTML(limitPhrase)}</strong>.</p>
     </div>
+    <div class="fcb-hold" id="fcb-hold" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Hold Escape to shoo the cat away">
+      <div class="fcb-hold-track"><div class="fcb-hold-fill" id="fcb-hold-fill"></div></div>
+      <p class="fcb-hold-label" id="fcb-hold-label">${HOLD_IDLE_HTML}</p>
+    </div>
   `;
 
   document.body.appendChild(catOverlay);
@@ -188,13 +203,34 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   requestAnimationFrame(() => requestAnimationFrame(() => catOverlay?.classList.add('fcb-in')));
   cardClose?.addEventListener('click', hideDialog);
   dialogHideTimer = setTimeout(hideDialog, DIALOG_HIDE_MS);
+  holdEls = {
+    root: document.getElementById('fcb-hold'),
+    fill: document.getElementById('fcb-hold-fill'),
+    label: document.getElementById('fcb-hold-label')
+  };
+
   keydownHandler = (event) => {
     if (event.key !== 'Escape') return;
     event.preventDefault();
     event.stopPropagation();
-    dismissWithOptions({ resetSite: true, resumePaused: true });
+    /* Held keys auto-repeat; without this each repeat would restart the hold
+       and the bar would never fill. */
+    if (event.repeat) return;
+    beginShooHold();
   };
+  keyupHandler = (event) => {
+    if (event.key !== 'Escape') return;
+    cancelShooHold();
+  };
+  /* A hold must not outlive the page having focus. Otherwise switching away
+     mid-hold leaves the timer running against a key that is physically up, and
+     the cat disappears seconds later with nobody touching anything. */
+  holdAbortHandler = () => cancelShooHold();
+
   window.addEventListener('keydown', keydownHandler, true);
+  window.addEventListener('keyup', keyupHandler, true);
+  window.addEventListener('blur', holdAbortHandler, true);
+  document.addEventListener('visibilitychange', holdAbortHandler, true);
 
   try {
     video.src = await getCatVideoUrl(safeVideoFile);
@@ -450,6 +486,52 @@ function getAlphaBounds(pixels, width, height, padding) {
   };
 }
 
+function beginShooHold() {
+  if (holdStartedAt || !catOverlay) return;
+  holdStartedAt = Date.now();
+  holdEls?.root.classList.add('fcb-hold-active');
+  stepShooHold();
+}
+
+function stepShooHold() {
+  if (!holdStartedAt || !catOverlay) return;
+
+  const elapsed = Date.now() - holdStartedAt;
+  const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+
+  if (holdEls) {
+    holdEls.fill.style.setProperty('transform', `scaleX(${progress})`, 'important');
+    holdEls.root.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
+    holdEls.label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+  }
+
+  if (progress >= 1) {
+    stopShooHold();
+    dismissWithOptions({ resetSite: true, resumePaused: true });
+    return;
+  }
+  holdRafId = requestAnimationFrame(stepShooHold);
+}
+
+/** Released early — reset to zero and put the hint back. */
+function cancelShooHold() {
+  if (!holdStartedAt) return;
+  stopShooHold();
+  if (holdEls) {
+    holdEls.fill.style.setProperty('transform', 'scaleX(0)', 'important');
+    holdEls.root.setAttribute('aria-valuenow', '0');
+    holdEls.label.innerHTML = HOLD_IDLE_HTML;
+  }
+}
+
+/** Tear down the ticking half of a hold without touching the visuals. */
+function stopShooHold() {
+  holdStartedAt = 0;
+  cancelAnimationFrame(holdRafId);
+  holdRafId = null;
+  holdEls?.root.classList.remove('fcb-hold-active');
+}
+
 function dismiss() {
   dismissWithOptions({ resetSite: false, resumePaused: false });
 }
@@ -470,9 +552,20 @@ function dismissWithOptions(options = {}) {
   cancelAnimationFrame(drawFrameId);
   drawFrameId = null;
 
+  stopShooHold();
+  holdEls = null;
   if (keydownHandler) {
     window.removeEventListener('keydown', keydownHandler, true);
     keydownHandler = null;
+  }
+  if (keyupHandler) {
+    window.removeEventListener('keyup', keyupHandler, true);
+    keyupHandler = null;
+  }
+  if (holdAbortHandler) {
+    window.removeEventListener('blur', holdAbortHandler, true);
+    document.removeEventListener('visibilitychange', holdAbortHandler, true);
+    holdAbortHandler = null;
   }
   if (resetSite) {
     safeSendRuntimeMessage({ type: 'RESET_SITE', domain: currentDomain });
