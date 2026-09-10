@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cat Break — a cat interrupts your doomscroll</title>
-<meta name="description" content="Free Chrome extension. When you've been on a site too long, a cat walks onto the page, pauses the video, and stays until you've taken a real break. No account, no ads, nothing leaves your device." />
+<meta name="description" content="Free Chrome extension. Stay on a site too long and a cat walks onto the page, pauses the video, and stays until you take a real break." />
 <!-- www is the host that serves 200; the apex 308-redirects to it. Canonical and
      og:url must name the URL that actually resolves, or the signals split. -->
 <link rel="canonical" href="https://www.catbreak.com/" />
@@ -18,6 +18,7 @@
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="A cat standing in a browser window asking you to take a break." />
+<meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Cat Break — a cat interrupts your doomscroll" />
 <meta name="twitter:description" content="Hit your time limit and a cat takes over the tab. Works on any site, not just social." />
@@ -46,6 +47,33 @@
 
 <!-- Install-click tracking, sent to whichever of the two above is available. -->
 <script defer src="analytics.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.catbreak.com/#org",
+      "name": "Cat Break",
+      "url": "https://www.catbreak.com/",
+      "logo": "https://www.catbreak.com/icons/icon-128.png",
+      "sameAs": [
+        "https://github.com/parthbhodia/gatekeep-lock-chrome-extension",
+        "https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.catbreak.com/#site",
+      "name": "Cat Break",
+      "url": "https://www.catbreak.com/",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://www.catbreak.com/#org" }
+    }
+  ]
+}
+</script>
 
 <script type="application/ld+json">
 {
