@@ -544,8 +544,8 @@ function bindEvents() {
   const resetAllBtn = document.getElementById('reset-all-btn');
   if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllStats);
   document.getElementById('preview-cat-btn').addEventListener('click', previewCatNow);
-  document.getElementById('shoo-cat-btn').addEventListener('click', shooCatAway);
-  document.getElementById('shoo-cat-btn-settings').addEventListener('click', shooCatAway);
+  wireShooHold(document.getElementById('shoo-cat-btn'));
+  wireShooHold(document.getElementById('shoo-cat-btn-settings'));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       flushPendingSave();
@@ -693,6 +693,69 @@ async function previewCatNow() {
     msg.textContent = 'Reload this page, then try again.';
     showToast('Reload this page, then try again', 'error');
   }
+}
+
+/* Same bargain as Esc in the overlay: shooing takes a deliberate hold rather
+   than a click, so it can't be done reflexively. Let go early and it resets.
+   The content script dismisses on SHOO_CAT immediately — the hold is served
+   here, and sending the message means it has already been earned. */
+const SHOO_HOLD_MS = 10 * 1000;
+
+function wireShooHold(button) {
+  if (!button) return;
+
+  const fill = button.querySelector('.shoo-fill');
+  const label = button.querySelector('.shoo-label');
+  const idleText = label.textContent;
+  let startedAt = 0;
+  let rafId = null;
+
+  const stop = () => {
+    if (!startedAt) return;
+    startedAt = 0;
+    cancelAnimationFrame(rafId);
+    rafId = null;
+    button.classList.remove('is-holding');
+    fill.style.transform = 'scaleX(0)';
+    label.textContent = idleText;
+  };
+
+  const step = () => {
+    if (!startedAt) return;
+    const elapsed = Date.now() - startedAt;
+    const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+    fill.style.transform = `scaleX(${progress})`;
+    label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+    if (progress >= 1) {
+      stop();
+      void shooCatAway();
+      return;
+    }
+    rafId = requestAnimationFrame(step);
+  };
+
+  const start = (event) => {
+    if (startedAt || button.disabled) return;
+    /* Stops the browser turning a held Space into a synthetic click on release,
+       which would fire shooCatAway() without any hold at all. */
+    event.preventDefault();
+    startedAt = Date.now();
+    button.classList.add('is-holding');
+    step();
+  };
+
+  button.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((type) => {
+    button.addEventListener(type, stop);
+  });
+  button.addEventListener('keydown', (event) => {
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+    event.preventDefault();
+    if (!event.repeat) start(event);
+  });
+  button.addEventListener('keyup', (event) => {
+    if (event.key === ' ' || event.key === 'Enter') stop();
+  });
 }
 
 async function shooCatAway() {
