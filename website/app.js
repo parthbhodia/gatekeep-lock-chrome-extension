@@ -379,3 +379,149 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
     });
   }, 2000);
 }
+
+/* ── Roaming cat ─────────────────────────────────────────────────────────── */
+
+/* Every so often a cat strolls across the bottom of the page, and you can shoo
+   her off the way you would a real break.
+
+   One deliberate difference from the extension: there, shooing takes a
+   ten-second hold, because making dismissal effortful is the entire product.
+   Here she is decoration on a marketing page, so a single click is enough —
+   the same friction that helps in the product would only irritate a visitor. */
+
+const ROAM_FIRST_MS = 22 * 1000;  // let people read something before a cat turns up
+const ROAM_GAP_MS = 95 * 1000;    // quiet stretch between strolls
+const ROAM_WALK_MS = 26 * 1000;   // one crossing, edge to edge
+const ROAM_RETRY_MS = 6 * 1000;   // re-check while something is in her way
+const ROAM_KEY = 'catbreak-roamer-off';
+const ROAM_SAYS = ['Mrrp!', 'Meow!', 'Fine, fine.', 'Rude.', 'Hmph.', 'Later, then.'];
+
+function roamerDismissed() {
+  try {
+    return sessionStorage.getItem(ROAM_KEY) === '1';
+  } catch {
+    return false; // Storage blocked — she just won't be remembered.
+  }
+}
+
+function setupRoamer() {
+  const roamer = document.getElementById('roamer');
+  const slot = roamer?.querySelector('.roamer-cat');
+  const shooBtn = document.getElementById('roamerShoo');
+  const say = document.getElementById('roamerSay');
+  if (!roamer || !slot || !shooBtn) return;
+
+  /* createCat rather than register(): the shared instances list is driven by an
+     IntersectionObserver, and a fixed-position cat that is always technically
+     on screen would fight it. This one starts and stops on its own schedule. */
+  const cat = createCat(slot, slot.dataset.cat, 190);
+  if (!cat) return;
+
+  let walk = null;
+  let nextTimer = null;
+  let rightward = true;
+  let gone = false;
+
+  const width = () => roamer.offsetWidth || 150;
+  const xNow = () => new DOMMatrix(getComputedStyle(roamer).transform).m41;
+
+  /* The consent banner is fixed bottom-left at a far higher z-index, and the
+     demo is a full-screen modal. Walking behind either means she is invisible
+     and unclickable for that stretch — and a cat wandering over a consent
+     prompt is the wrong thing to obscure regardless. Wait them out. */
+  function blocked() {
+    return !!document.querySelector('.cookie') ||
+      document.body.classList.contains('demo-open');
+  }
+
+  function stroll() {
+    if (gone) return;
+    if (document.hidden || blocked()) return schedule(ROAM_RETRY_MS);
+
+    const from = rightward ? -width() : window.innerWidth;
+    const to = rightward ? window.innerWidth : -width();
+
+    // The clip walks one way; mirror it so she always faces where she is going.
+    slot.style.transform = rightward ? 'scaleX(1)' : 'scaleX(-1)';
+    roamer.hidden = false;
+    cat.start();
+
+    walk = roamer.animate(
+      [{ transform: `translateX(${from}px)` }, { transform: `translateX(${to}px)` }],
+      { duration: ROAM_WALK_MS, easing: 'linear', fill: 'forwards' }
+    );
+    walk.onfinish = rest;
+  }
+
+  function rest() {
+    walk = null;
+    roamer.hidden = true;
+    cat.stop();
+    rightward = !rightward;
+    schedule(ROAM_GAP_MS);
+  }
+
+  function schedule(delay) {
+    clearTimeout(nextTimer);
+    if (gone) return;
+    nextTimer = setTimeout(stroll, delay);
+  }
+
+  /* Shooed: she bolts for the edge she was heading towards, with a parting
+     word, and takes the hint for the rest of the visit. */
+  function shoo() {
+    if (gone || roamer.hidden || !walk) return;
+    gone = true;
+    clearTimeout(nextTimer);
+    roamer.classList.add('is-shooed');
+
+    const x = xNow();
+    walk.cancel();
+    walk = null;
+    roamer.style.transform = `translateX(${x}px)`;
+
+    if (say) {
+      say.textContent = ROAM_SAYS[Math.floor(Math.random() * ROAM_SAYS.length)];
+      say.classList.add('is-in');
+    }
+
+    const exit = rightward ? window.innerWidth + width() : -width() * 2;
+    const bolt = roamer.animate(
+      [
+        { transform: `translateX(${x}px) translateY(0) scale(1)`, opacity: 1 },
+        { transform: `translateX(${(x + exit) / 2}px) translateY(-16px) scale(0.97)`,
+          opacity: 1, offset: 0.45 },
+        { transform: `translateX(${exit}px) translateY(0) scale(0.9)`, opacity: 0 }
+      ],
+      { duration: 640, easing: 'cubic-bezier(.32,0,.2,1)', fill: 'forwards' }
+    );
+
+    bolt.onfinish = () => {
+      roamer.hidden = true;
+      cat.stop();
+      say?.classList.remove('is-in');
+      try {
+        sessionStorage.setItem(ROAM_KEY, '1');
+      } catch {
+        /* Not remembered across pages; she is still gone for this one. */
+      }
+    };
+  }
+
+  shooBtn.addEventListener('click', shoo);
+
+  /* rAF is frozen in a hidden tab, so a stroll would otherwise resume from
+     wherever it froze and jump. Pause the paint; the animation keeps its own time. */
+  document.addEventListener('visibilitychange', () => {
+    if (gone) return;
+    if (document.hidden) cat.stop();
+    else if (!roamer.hidden) cat.start();
+  });
+
+  schedule(ROAM_FIRST_MS);
+}
+
+/* Skipped entirely for reduced motion: a cat walking across the page is the one
+   thing on this site that is pure movement. */
+if (!reduceMotion && !roamerDismissed()) setupRoamer();

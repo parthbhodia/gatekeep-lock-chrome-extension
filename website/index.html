@@ -542,6 +542,19 @@
   </div>
 </footer>
 
+<!-- ─── Roaming cat ───────────────────────────────────────────────────────── -->
+<!-- Decoration, so it is built entirely by app.js and starts hidden: a visitor
+     with JS off, or one who prefers reduced motion, simply never sees it. -->
+<div class="roamer" id="roamer" hidden>
+  <div class="roamer-cat" data-cat="cat-street-strut.mp4">
+    <canvas class="cat-canvas"></canvas>
+  </div>
+  <button class="roamer-shoo" id="roamerShoo" type="button" aria-label="Shoo the roaming cat away">
+    <span class="roamer-hint" aria-hidden="true">shoo!</span>
+  </button>
+  <span class="roamer-say" id="roamerSay" aria-hidden="true"></span>
+</div>
+
 <!-- ─── Live demo overlay (mirrors the extension) ─────────────────────────── -->
 <div class="demo" id="demo" hidden>
   <div class="demo-scrim"></div>
