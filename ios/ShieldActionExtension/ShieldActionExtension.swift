@@ -2,9 +2,25 @@ import ManagedSettings
 import Foundation
 
 /// Handles taps on the shield's buttons. Primary = close the app and honor the
-/// break. Secondary = "Shoo": lift the cat for this app right away — the same
-/// gesture as the extension's shoo button — and let the re-armed timer run.
+/// break — or, once the break has elapsed, "Let me in": lift the cat and
+/// re-arm. Secondary = "Shoo": lift the cat for this app right away — the
+/// same gesture as the extension's shoo button — and let the re-armed timer
+/// run.
 class ShieldActionExtension: ShieldActionDelegate {
+
+    /// Breaks under DeviceActivity's 15-minute floor can't end on their own,
+    /// so the shield may still be up after the break has elapsed. The
+    /// configuration extension shows "Break's over" then, and the primary
+    /// button lets the user straight back in instead of closing the app.
+    private func handlePrimary(_ completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        if SharedStore.breakMinutesRemaining == 0 {
+            ShieldController.liftAll()
+            try? MonitorScheduler.refreshMonitoring()
+            completionHandler(.none)
+        } else {
+            completionHandler(.close)
+        }
+    }
 
     override func handle(
         action: ShieldAction,
@@ -13,7 +29,7 @@ class ShieldActionExtension: ShieldActionDelegate {
     ) {
         switch action {
         case .primaryButtonPressed:
-            completionHandler(.close)
+            handlePrimary(completionHandler)
         case .secondaryButtonPressed:
             ShieldController.unshield(app: application)
             // The threshold ladder was advanced when the cat arrived, so
@@ -32,7 +48,7 @@ class ShieldActionExtension: ShieldActionDelegate {
     ) {
         switch action {
         case .primaryButtonPressed:
-            completionHandler(.close)
+            handlePrimary(completionHandler)
         case .secondaryButtonPressed:
             let store = ShieldController.store
             var domains = store.shield.webDomains ?? []
@@ -52,7 +68,7 @@ class ShieldActionExtension: ShieldActionDelegate {
     ) {
         switch action {
         case .primaryButtonPressed:
-            completionHandler(.close)
+            handlePrimary(completionHandler)
         case .secondaryButtonPressed:
             // Shoo the whole category — a per-app carve-out isn't possible
             // when the shield came from a category rule.
