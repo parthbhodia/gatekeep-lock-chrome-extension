@@ -31,7 +31,10 @@ embeds it but cannot read the numbers (OS sandbox).
 ## Invariants / gotchas
 
 - `SharedConstants.appGroup` must equal the group in all five `.entitlements`
-  files and the developer portal. One string, six places — grep before ship.
+  files and the developer portal. One string, six places — `./setup.sh --check`
+  verifies those six plus the bundle ids, the app's `CFBundleURLName` and the
+  ids the CI workflow launches. If you add a tenth place that names an
+  identifier, teach `setup.sh` about it in the same commit.
 - Event names are deterministic (`catbreak.default`, `catbreak.override.<n>`
   sorted by token storageKey) so the monitor extension can recompute coverage
   without the app running. Don't break that ordering.

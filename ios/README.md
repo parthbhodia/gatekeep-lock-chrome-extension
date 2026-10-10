@@ -47,30 +47,36 @@ meow lines) lives in `Shared/` and is compiled into every target.
 
 ```sh
 cd ios
-xcodegen generate
+./setup.sh com.yourname      # your identifiers everywhere, verified, + xcodegen
 open CatBreak.xcodeproj
 ```
 
+`setup.sh` is the whole of the old step 1. The `com.catbreak` prefix in the
+repo is a placeholder, and it appears in nine files — the XcodeGen spec, five
+`.entitlements` files, `SharedConstants.appGroup`, the app's `CFBundleURLName`
+and the CI workflow. They all have to agree: if an extension's entitlements
+name a different App Group than `SharedConstants.appGroup`, nothing errors,
+the extension just reads an empty store. So the script rewrites all nine,
+checks the result, and runs `xcodegen generate`.
+
+| Flag | Effect |
+|---|---|
+| `--team ABCDE12345` | also fills in `DEVELOPMENT_TEAM` in `project.yml` |
+| `--check` | verify only, change nothing — run it any time |
+| `--no-generate` | skip `xcodegen generate` |
+
+`./setup.sh com.yourname` and `./setup.sh com.yourname.catbreak` mean the same
+thing, and re-running it with a different prefix renames again.
+
 Then, in Xcode:
 
-1. **Rename the identifiers to yours** (the `com.catbreak` prefix is a
-   placeholder). From the `ios/` folder:
-
-   ```sh
-   # bundle id prefix (5 targets)
-   sed -i '' 's/com\.catbreak/com.YOURNAME.catbreak/g' project.yml
-   # app group (5 entitlements files + the Swift constant)
-   grep -rl 'group\.com\.catbreak\.shared' . | xargs sed -i '' 's/group\.com\.catbreak\.shared/group.com.YOURNAME.catbreak/g'
-   xcodegen generate
-   ```
-
-2. Select your **Team** on all five targets (Signing & Capabilities).
+1. Select your **Team** on all five targets (Signing & Capabilities).
    With automatic signing, Xcode registers the bundle ids, the App Group, and
    the **Family Controls (development)** capability for you. If the capability
    is missing on a target, add it manually: + Capability → Family Controls.
-3. Select your device and **Run**. On first launch, tap "Allow Screen Time
+2. Select your device and **Run**. On first launch, tap "Allow Screen Time
    access" and approve the system prompt.
-4. In **Settings → Choose apps to limit**, pick something you actually use,
+3. In **Settings → Choose apps to limit**, pick something you actually use,
    set a short default limit (e.g. 15 min), then go use that app.
 
 ## Things to know before you judge the cat
