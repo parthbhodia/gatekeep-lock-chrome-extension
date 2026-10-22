@@ -108,6 +108,27 @@
   display: block;
 }
 
+/* The clip couldn't be loaded at all — the app icon stands in for the cat. */
+.fcb-cat-static .fcb-cat-canvas,
+.fcb-cat-static .fcb-source-video {
+  display: none;
+}
+
+#fcb-overlay.fcb-cat-static .fcb-cat-wrap {
+  width: auto;
+  padding: 0 0 28px 40px;
+  transform: none;
+}
+
+.fcb-static-cat {
+  display: block;
+  width: min(200px, 40vw);
+  height: auto;
+  border-radius: 28%;
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.22));
+  animation: fcb-cat-breathe 3s ease-in-out infinite alternate;
+}
+
 @keyframes fcb-backdrop-in {
   to { opacity: 1; }
 }

@@ -8,6 +8,8 @@ const SUPABASE_LIST_URL = 'https://pozytitruvcthhfvpqic.supabase.co/storage/v1/o
 // Publishable (anon) key — safe to ship in client code, read-only access only
 const SUPABASE_ANON_KEY = 'sb_publishable__RWZ07cSXRVJsMRnNoUjww_rGfM1dB6';
 const VIDEO_CACHE_NAME = 'cat-videos-v1';
+const VIDEO_FETCH_TIMEOUT_MS = 30 * 1000;
+const pendingVideoDownloads = new Map();
 
 /** Strip legacy assets/ prefix so all file keys are flat (e.g. 'cat-curious-stroll.mp4'). */
 function normalizeVideoFile(file) {
@@ -89,43 +91,103 @@ async function getVideoManifest() {
   }
 }
 
-/** Download and cache all cat videos from Supabase. Called on install/update. */
-async function cacheAllVideos() {
+/**
+ * Download one clip and keep it in the Cache API. Resolves to its bytes, or null when the
+ * host refuses or stalls. Never rejects.
+ */
+async function fetchAndCacheVideo(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), VIDEO_FETCH_TIMEOUT_MS);
   try {
-    // Always fetch a fresh list on install/update so new videos appear immediately
-    const files = (await fetchLiveVideoList()) || (await getVideoManifest());
-    // Purge any old cache versions first
-    const allKeys = await caches.keys();
-    await Promise.all(allKeys.filter((k) => k !== VIDEO_CACHE_NAME).map((k) => caches.delete(k)));
-
-    const cache = await caches.open(VIDEO_CACHE_NAME);
-    await Promise.all(
-      files.map(async (file) => {
-        const url = getSupabaseUrl(file);
-        try {
-          const res = await fetch(url);
-          if (res.ok) await cache.put(url, res);
-        } catch {
-          // Non-fatal — will be fetched on demand at display time
-        }
-      })
-    );
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    try {
+      const cache = await caches.open(VIDEO_CACHE_NAME);
+      await cache.put(url, new Response(buffer, { headers: { 'Content-Type': 'video/mp4' } }));
+    } catch {
+      // Cache API unavailable — the clip plays this time, it just isn't kept.
+    }
+    return buffer;
   } catch {
-    // Cache API unavailable; videos will be fetched fresh on demand
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-/** Re-cache only if the cache is empty (e.g. after a browser data clear). */
-async function warmCacheIfEmpty() {
-  try {
-    const files = await getVideoManifest();
-    const cache = await caches.open(VIDEO_CACHE_NAME);
-    const firstUrl = getSupabaseUrl(files[0]);
-    const hit = await cache.match(firstUrl);
-    if (!hit) await cacheAllVideos();
-  } catch {
-    // Ignore
+/** One download per clip at a time: a break can land while the install-time warm-up is still fetching it. */
+function downloadVideo(url) {
+  let job = pendingVideoDownloads.get(url);
+  if (!job) {
+    job = fetchAndCacheVideo(url).finally(() => pendingVideoDownloads.delete(url));
+    pendingVideoDownloads.set(url, job);
   }
+  return job;
+}
+
+/** A clip's bytes: from the cache when we have it, otherwise downloaded (and cached) now. */
+async function loadVideoBuffer(file) {
+  const url = getSupabaseUrl(file);
+  try {
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    const hit = await cache.match(url);
+    if (hit?.ok) return await hit.arrayBuffer();
+  } catch {
+    // Cache API unavailable — go to the network.
+  }
+  return downloadVideo(url);
+}
+
+/** Bytes of any clip already cached — better than a break with no cat. */
+async function loadAnyCachedVideoBuffer() {
+  try {
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    for (const req of await cache.keys()) {
+      const hit = await cache.match(req);
+      if (hit?.ok) return await hit.arrayBuffer();
+    }
+  } catch {
+    // Cache API unavailable.
+  }
+  return null;
+}
+
+/**
+ * Make sure the clip the user will actually see is on disk. Only that one: fetching the
+ * whole library on every install and update multiplied hosting egress by the user count.
+ * The other clips are fetched the first time a break needs them.
+ */
+async function warmSelectedVideo() {
+  try {
+    const { settings } = await chrome.storage.local.get('settings');
+    const url = getSupabaseUrl(settings?.catVideoFile || DEFAULT_CAT_VIDEO_FILE);
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    if (!(await cache.match(url))) await downloadVideo(url);
+  } catch {
+    // Non-fatal — fetched on demand at break time.
+  }
+}
+
+/** Drop cache buckets left by older releases. The current one is kept, so an update re-downloads nothing. */
+async function purgeStaleVideoCaches() {
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== VIDEO_CACHE_NAME).map((k) => caches.delete(k)));
+  } catch {
+    // Cache API unavailable.
+  }
+}
+
+/** Extension messaging is JSON-serialised, which turns an ArrayBuffer into {} — binary has to travel as text. */
+function bufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
 }
 
 let activeTabId = null;
@@ -139,14 +201,15 @@ const TRACKING_STATE_KEY = 'trackingState';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   await init();
-  // Re-download all videos on fresh install or version update
   if (details.reason === 'install' || details.reason === 'update') {
-    cacheAllVideos();
+    fetchLiveVideoList(); // a few hundred bytes — new clips show up in the picker straight away
+    if (details.reason === 'update') purgeStaleVideoCaches();
+    warmSelectedVideo();
   }
 });
 chrome.runtime.onStartup.addListener(async () => {
   await init();
-  warmCacheIfEmpty(); // Re-cache only if browser data was cleared
+  warmSelectedVideo(); // Re-cache only if browser data was cleared
 });
 
 async function init() {
@@ -639,33 +702,10 @@ async function handleMessage(msg) {
       return { ok: true };
     }
     case 'GET_CAT_VIDEO': {
-      try {
-        // Normalize so legacy 'assets/cat-*.mp4' keys still resolve correctly
-        const url = getSupabaseUrl(msg.file);
-        const cache = await caches.open(VIDEO_CACHE_NAME);
-        let res = await cache.match(url);
-        if (!res) {
-          // Cache miss — fetch from Supabase and store for next time
-          res = await fetch(url);
-          if (res.ok) await cache.put(url, res.clone());
-        }
-        if (!res?.ok) {
-          // Requested file not available — fall back to any cached video
-          const keys = await cache.keys();
-          for (const req of keys) {
-            const fallback = await cache.match(req);
-            if (fallback?.ok) {
-              const buffer = await fallback.arrayBuffer();
-              return { ok: true, buffer };
-            }
-          }
-          return { ok: false };
-        }
-        const buffer = await res.arrayBuffer();
-        return { ok: true, buffer };
-      } catch {
-        return { ok: false };
-      }
+      // The requested clip, else any cached one, so a bad name or a refusing host still gets a cat.
+      const buffer = (await loadVideoBuffer(msg.file)) || (await loadAnyCachedVideoBuffer());
+      if (!buffer) return { ok: false };
+      return { ok: true, base64: bufferToBase64(buffer) };
     }
     case 'GET_CAT_VIDEOS_LIST': {
       const files = await getVideoManifest();

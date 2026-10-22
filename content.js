@@ -25,6 +25,9 @@ let holdEls = null;
 const catVideoUrls = new Map();
 const DEFAULT_LINGER_MS = 2 * 60 * 1000;
 const DIALOG_HIDE_MS = 5 * 1000;
+/* How long a break waits for its clip before falling back to the static cat. The background
+   gives up on the download itself after 30s; this is shorter so the break never sits empty. */
+const VIDEO_LOAD_TIMEOUT_MS = 20 * 1000;
 /* Shooing is deliberately effortful. A single tap of Esc used to end the break
    instantly, which made dismissing it reflexive — the thing the break exists to
    interrupt. Holding for the full duration is long enough that you have to
@@ -232,15 +235,8 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   window.addEventListener('blur', holdAbortHandler, true);
   document.addEventListener('visibilitychange', holdAbortHandler, true);
 
-  try {
-    video.src = await getCatVideoUrl(safeVideoFile);
-    await video.play();
-    setupCanvas(video, canvas, buffer);
-    drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
-  } catch {
-    catOverlay?.classList.add('fcb-video-fallback');
-  }
-
+  /* The countdown runs from the moment the overlay opens, not from when the clip arrives:
+     a slow or refusing video host must not stretch the break or leave it without an end. */
   const endsAt = Date.now() + safeLingerMs;
   countdownTimer = setInterval(() => {
     timer.textContent = formatCountdown(endsAt - Date.now());
@@ -249,6 +245,17 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   hideTimer = setTimeout(() => {
     dismissWithOptions({ resetSite: true, resumePaused: true });
   }, safeLingerMs);
+
+  try {
+    const src = await withTimeout(getCatVideoUrl(safeVideoFile), VIDEO_LOAD_TIMEOUT_MS);
+    if (!src) throw new Error('clip unavailable');
+    video.src = src;
+    await video.play();
+    setupCanvas(video, canvas, buffer);
+    drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
+  } catch {
+    showStaticCat();
+  }
 }
 
 function pauseVisibleVideos() {
@@ -360,14 +367,45 @@ async function getCatVideoUrl(videoFile) {
   try {
     if (!isExtensionContextValid()) return '';
     const res = await sendRuntimeMessageAsync({ type: 'GET_CAT_VIDEO', file: videoFile });
-    if (!res?.ok || !res.buffer) return '';
-    const blob = new Blob([res.buffer], { type: 'video/mp4' });
+    if (!res?.ok || typeof res.base64 !== 'string') return '';
+    const blob = new Blob([base64ToBytes(res.base64)], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     catVideoUrls.set(videoFile, url); // cache blob URL for reuse
     return url;
   } catch {
     return '';
   }
+}
+
+/** The background sends clips as base64: extension messaging is JSON, which would turn raw bytes into {}. */
+function base64ToBytes(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timed out')), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
+
+/** The clip couldn't be had (offline, host refusing): put the app icon where the cat would be, so the break still has one. */
+function showStaticCat() {
+  const wrap = catOverlay?.querySelector('.fcb-cat-wrap');
+  if (!wrap || !isExtensionContextValid()) return;
+  catOverlay.classList.add('fcb-cat-static');
+  const img = document.createElement('img');
+  img.className = 'fcb-static-cat';
+  img.id = 'fcb-static-cat';
+  img.alt = '';
+  img.src = chrome.runtime.getURL('icons/cat-lock/cute_cat_lock_128.png');
+  wrap.appendChild(img);
 }
 
 function setupCanvas(video, canvas, buffer) {
