@@ -862,7 +862,12 @@ function initReviewBanner() {
 async function initTour() {
   try {
     const stored = await chrome.storage.local.get(TOUR_STORAGE_KEY);
-    if (!stored[TOUR_STORAGE_KEY]) openTour(0);
+    if (stored[TOUR_STORAGE_KEY]) return;
+    openTour(0);
+    /* Showing it once is enough. The flag used to be written only by Skip, Done and Esc,
+       so anyone who clicked away (which closes the popup) got the tour on every open.
+       The Tour button replays it. */
+    await chrome.storage.local.set({ [TOUR_STORAGE_KEY]: true });
   } catch {
     /* storage unavailable; Tour button still works */
   }
