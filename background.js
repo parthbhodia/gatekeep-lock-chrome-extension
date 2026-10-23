@@ -222,6 +222,7 @@ async function init() {
         excludedSites: [],
         enabled: true,
         catLingerMinutes: 2,
+        shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
         randomCatVideo: false
@@ -237,6 +238,7 @@ async function init() {
       settings: {
         defaultLimit: 30 * 60 * 1000,
         catLingerMinutes: 2,
+        shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
         randomCatVideo: false,
@@ -450,6 +452,7 @@ async function checkAndNotify() {
       timeSpent,
       limit,
       lingerMs: getCatLingerMs(settings),
+      shooHoldMs: getShooHoldMs(settings),
       videoFile: await resolveCatVideoFileForBreak(settings)
     };
 
@@ -504,6 +507,11 @@ function hasExplicitSiteLimit(domain, settings) {
   if (Object.prototype.hasOwnProperty.call(siteLimits, altKey)) return true;
   const norm = normalizeDomain(domain);
   return Object.keys(siteLimits).some((key) => normalizeDomain(key) === norm);
+}
+
+function getShooHoldMs(settings) {
+  const seconds = Math.round(Number(settings.shooHoldSeconds));
+  return (Number.isFinite(seconds) && seconds >= 1 ? Math.min(60, seconds) : 10) * 1000;
 }
 
 function getCatLingerMs(settings) {

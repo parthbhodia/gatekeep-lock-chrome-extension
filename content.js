@@ -32,7 +32,8 @@ const VIDEO_LOAD_TIMEOUT_MS = 20 * 1000;
    instantly, which made dismissing it reflexive — the thing the break exists to
    interrupt. Holding for the full duration is long enough that you have to
    actually decide to do it. Let go early and it resets to zero. */
-const SHOO_HOLD_MS = 10 * 1000;
+const DEFAULT_SHOO_HOLD_MS = 10 * 1000;
+let shooHoldMs = DEFAULT_SHOO_HOLD_MS; // per break; the background sends the user's setting
 const HOLD_IDLE_HTML = 'Hold <b class="fcb-kbd">Esc</b> to shoo the cat away';
 const DEFAULT_CAT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const BRIDAL_TIPS_VIDEO_FILE = 'cat-elegant-steps.mp4';
@@ -144,11 +145,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === 'SHOW_CAT') {
     if (catOverlay) return;
-    showCat(msg.domain, msg.timeSpent, msg.limit, msg.lingerMs, msg.videoFile);
+    showCat(msg.domain, msg.timeSpent, msg.limit, msg.lingerMs, msg.videoFile, msg.shooHoldMs);
   }
 });
 
-async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE) {
+async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE, holdMs = DEFAULT_SHOO_HOLD_MS) {
+  shooHoldMs = Math.min(60 * 1000, Math.max(1000, Number(holdMs) || DEFAULT_SHOO_HOLD_MS));
   videoFile = normalizeVideoFile(videoFile) || DEFAULT_CAT_VIDEO_FILE;
   currentDomain = domain;
   catShownAt = Date.now();
@@ -535,12 +537,12 @@ function stepShooHold() {
   if (!holdStartedAt || !catOverlay) return;
 
   const elapsed = Date.now() - holdStartedAt;
-  const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+  const progress = Math.min(1, elapsed / shooHoldMs);
 
   if (holdEls) {
     holdEls.fill.style.setProperty('transform', `scaleX(${progress})`, 'important');
     holdEls.root.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
-    holdEls.label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+    holdEls.label.textContent = `Keep holding… ${Math.ceil((shooHoldMs - elapsed) / 1000)}s`;
   }
 
   if (progress >= 1) {
