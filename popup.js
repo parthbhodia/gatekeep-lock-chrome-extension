@@ -963,6 +963,8 @@ async function closeTour(markDone) {
   overlay.classList.add('is-hidden');
   overlay.setAttribute('aria-hidden', 'true');
   if (replay) replay.disabled = false;
+  /* The tour visits Settings; however it ends (Done, Skip, Esc, a replay), land on Cat. */
+  setActiveTab('cat');
   if (markDone) {
     try {
       await chrome.storage.local.set({ [TOUR_STORAGE_KEY]: true });
