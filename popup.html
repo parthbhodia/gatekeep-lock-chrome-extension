@@ -44,7 +44,7 @@
       </div>
 
       <div class="section">
-        <span class="label">Cat auto-dismiss <span class="info" aria-label="Help: auto-dismiss timer" data-tooltip="How long the break cat stays on screen before it closes by itself. You can end it sooner by holding Esc, or holding the Shoo button here, for 10 seconds."></span></span>
+        <span class="label">Cat auto-dismiss <span class="info" aria-label="Help: auto-dismiss timer" data-tooltip="How long the break cat stays on screen before it closes by itself. You can end it sooner by holding Esc, or holding the Shoo button here (hold time is under Settings)."></span></span>
         <div class="chip-row" id="cat-linger-chips"></div>
         <div class="custom-row">
           <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
@@ -108,6 +108,15 @@
         <div class="add-row">
           <input type="text" id="exclude-domain" placeholder="example.com" class="site-input">
           <button id="exclude-add-btn" class="add-btn">Exclude</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <span class="label">Shoo hold time <span class="info" aria-label="Help: shoo hold time" data-tooltip="How long you hold Esc (or the Shoo button) to send the cat away early. Longer makes it harder to dismiss on reflex."></span></span>
+        <div class="chip-row" id="shoo-hold-chips"></div>
+        <div class="custom-row">
+          <input type="number" id="shoo-hold" min="1" max="60" step="1" class="num-input">
+          <span class="unit">seconds (custom)</span>
         </div>
       </div>
 

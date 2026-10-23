@@ -22,6 +22,8 @@ function fileToLabel(filename) {
 
 const LIMIT_CHIPS = [15, 30, 45, 60, 90];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
+const SHOO_HOLD_CHIPS = [3, 5, 10, 20, 30];
+const DEFAULT_SHOO_HOLD_SECONDS = 10;
 
 /**
  * Dynamically populated from the Supabase manifest at startup.
@@ -35,6 +37,7 @@ let settings = {
   excludedSites: [],
   enabled: true,
   catLingerMinutes: 2,
+  shooHoldSeconds: DEFAULT_SHOO_HOLD_SECONDS,
   catVideoFile: DEFAULT_VIDEO_FILE,
   trackedSitesOnly: false,
   randomCatVideo: false
@@ -45,6 +48,7 @@ let isSaving = false;
 let toastTimer = null;
 let defaultLimitToastTimer = null;
 let catLingerToastTimer = null;
+let shooHoldToastTimer = null;
 
 const TOUR_STORAGE_KEY = 'catBreakTourCompleted';
 let tourStepIndex = 0;
@@ -158,10 +162,12 @@ function render() {
   if (randomCat) randomCat.checked = settings.randomCatVideo === true;
   syncDefaultLimitInputs(Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000)));
   document.getElementById('cat-linger').value = Math.max(0.1, Number(settings.catLingerMinutes ?? 2));
+  document.getElementById('shoo-hold').value = getShooHoldSeconds();
   document.getElementById('cat-video').value = settings.catVideoFile;
 
   renderDefaultLimitChips();
   renderCatLingerChips();
+  renderShooHoldChips();
   renderStats();
   renderPerSiteChips();
   renderSiteLimits();
@@ -204,6 +210,27 @@ function renderCatLingerChips() {
       settings.catLingerMinutes = value;
       document.getElementById('cat-linger').value = value;
       renderCatLingerChips();
+      queueSave();
+    }
+  );
+}
+
+/** Whole seconds, 1–60; anything unset or garbled falls back to the default. */
+function getShooHoldSeconds() {
+  const n = Math.round(Number(settings.shooHoldSeconds));
+  return Number.isFinite(n) && n >= 1 ? Math.min(60, n) : DEFAULT_SHOO_HOLD_SECONDS;
+}
+
+function renderShooHoldChips() {
+  renderChips(
+    document.getElementById('shoo-hold-chips'),
+    SHOO_HOLD_CHIPS,
+    getShooHoldSeconds(),
+    's',
+    (value) => {
+      settings.shooHoldSeconds = value;
+      document.getElementById('shoo-hold').value = value;
+      renderShooHoldChips();
       queueSave();
     }
   );
@@ -494,6 +521,16 @@ function bindEvents() {
     catLingerToastTimer = setTimeout(() => showToast(`Auto-dismiss set to ${settings.catLingerMinutes}m`, 'success'), 700);
   });
 
+  document.getElementById('shoo-hold').addEventListener('input', (e) => {
+    const value = parseInt(e.target.value, 10);
+    if (!Number.isFinite(value)) return; // mid-edit; keep the last good value
+    settings.shooHoldSeconds = Math.min(60, Math.max(1, value));
+    renderShooHoldChips();
+    queueSave();
+    clearTimeout(shooHoldToastTimer);
+    shooHoldToastTimer = setTimeout(() => showToast(`Shoo hold set to ${settings.shooHoldSeconds}s`, 'success'), 700);
+  });
+
   document.getElementById('add-btn').addEventListener('click', () => {
     const rawDomain = document.getElementById('add-domain').value;
     const domain = cleanDomain(rawDomain);
@@ -684,6 +721,7 @@ async function previewCatNow() {
       limit: 30 * 60 * 1000,
       lingerMs: Math.max(0.1, Number(settings.catLingerMinutes ?? 2)) * 60 * 1000,
       videoFile,
+      shooHoldMs: getShooHoldSeconds() * 1000,
       force: true
     });
     msg.textContent = settings.randomCatVideo ? 'Preview: one random cat on this tab.' : 'Preview shown on this tab.';
@@ -699,8 +737,6 @@ async function previewCatNow() {
    than a click, so it can't be done reflexively. Let go early and it resets.
    The content script dismisses on SHOO_CAT immediately — the hold is served
    here, and sending the message means it has already been earned. */
-const SHOO_HOLD_MS = 10 * 1000;
-
 function wireShooHold(button) {
   if (!button) return;
 
@@ -723,9 +759,10 @@ function wireShooHold(button) {
   const step = () => {
     if (!startedAt) return;
     const elapsed = Date.now() - startedAt;
-    const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+    const holdMs = getShooHoldSeconds() * 1000;
+    const progress = Math.min(1, elapsed / holdMs);
     fill.style.transform = `scaleX(${progress})`;
-    label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+    label.textContent = `Keep holding… ${Math.ceil((holdMs - elapsed) / 1000)}s`;
     if (progress >= 1) {
       stop();
       void shooCatAway();
@@ -926,6 +963,8 @@ async function closeTour(markDone) {
   overlay.classList.add('is-hidden');
   overlay.setAttribute('aria-hidden', 'true');
   if (replay) replay.disabled = false;
+  /* The tour visits Settings; however it ends (Done, Skip, Esc, a replay), land on Cat. */
+  setActiveTab('cat');
   if (markDone) {
     try {
       await chrome.storage.local.set({ [TOUR_STORAGE_KEY]: true });
