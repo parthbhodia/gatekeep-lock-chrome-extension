@@ -259,13 +259,30 @@ async function reportStart(reason) {
 }
 
 /** Sites timed by default when limitSocialOnly is on: social media, plus amazon.com. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
-const SOCIAL_SITES = [
-  'youtube.com', 'youtu.be', 'instagram.com', 'facebook.com', 'x.com', 'twitter.com', 'tiktok.com',
-  'reddit.com', 'snapchat.com', 'pinterest.com', 'twitch.tv', 'threads.net', 'threads.com', 'tumblr.com', 'bsky.app', 'amazon.com'
+// Grouped so each can be switched off in Settings (settings.socialSitesOff holds the ids that are off).
+// The popup lists the same ids; test/social.test.mjs checks the two stay in step.
+const SOCIAL_GROUPS = [
+  { id: 'youtube', domains: ['youtube.com', 'youtu.be'] },
+  { id: 'instagram', domains: ['instagram.com'] },
+  { id: 'facebook', domains: ['facebook.com'] },
+  { id: 'x', domains: ['x.com', 'twitter.com'] },
+  { id: 'tiktok', domains: ['tiktok.com'] },
+  { id: 'reddit', domains: ['reddit.com'] },
+  { id: 'snapchat', domains: ['snapchat.com'] },
+  { id: 'pinterest', domains: ['pinterest.com'] },
+  { id: 'twitch', domains: ['twitch.tv'] },
+  { id: 'threads', domains: ['threads.net', 'threads.com'] },
+  { id: 'tumblr', domains: ['tumblr.com'] },
+  { id: 'bluesky', domains: ['bsky.app'] },
+  { id: 'amazon', domains: ['amazon.com'] }
 ];
+const SOCIAL_SITES = SOCIAL_GROUPS.flatMap((group) => group.domains);
 
-function isSocialDomain(domain) {
-  return SOCIAL_SITES.some((site) => domain === site || domain.endsWith(`.${site}`));
+function isSocialDomain(domain, settings = {}) {
+  const off = Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : [];
+  return SOCIAL_GROUPS.some(
+    (group) => !off.includes(group.id) && group.domains.some((site) => domain === site || domain.endsWith(`.${site}`))
+  );
 }
 
 /** For usage stats: the built-in site a domain belongs to (m.youtube.com -> youtube.com), else 'other'. */
@@ -278,7 +295,7 @@ function usageSiteLabel(domain) {
 function isTrackedDomain(domain, settings) {
   if (hasExplicitSiteLimit(domain, settings)) return true;
   if (settings.trackedSitesOnly === true) return false;
-  if (settings.limitSocialOnly === true) return isSocialDomain(domain);
+  if (settings.limitSocialOnly === true) return isSocialDomain(domain, settings);
   return true;
 }
 
@@ -320,6 +337,7 @@ async function init() {
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
         limitSocialOnly: true, // new installs start with social sites only
+        socialSitesOff: [],
         shareUsage: true,
         randomCatVideo: false
       },
@@ -341,6 +359,7 @@ async function init() {
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
         limitSocialOnly: untouched,
+        socialSitesOff: [],
         shareUsage: true,
         randomCatVideo: false,
         ...settings
@@ -597,7 +616,7 @@ function getDomainLimit(domain, settings) {
   const alt = `www.${domain}`;
   if (alt in siteLimits) return siteLimits[alt];
   if (settings.trackedSitesOnly === true) return 0;
-  if (settings.limitSocialOnly === true && !isSocialDomain(domain)) return 0;
+  if (settings.limitSocialOnly === true && !isSocialDomain(domain, settings)) return 0;
   return settings.defaultLimit ?? 30 * 60 * 1000;
 }
 

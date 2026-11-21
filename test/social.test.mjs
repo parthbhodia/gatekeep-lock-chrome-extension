@@ -58,6 +58,23 @@ ok('list-only mode still wins: social sites not on the list are skipped', tracke
 ok('limit for a social site is the default limit', env.run(`getDomainLimit('youtube.com', {limitSocialOnly:true, defaultLimit: 1800000, siteLimits:{}})`) === 1800000);
 ok('limit for a non-social site is 0 (off)', env.run(`getDomainLimit('github.com', {limitSocialOnly:true, defaultLimit: 1800000, siteLimits:{}})`) === 0);
 
+// 1b) Individual sites can be switched off.
+const offAmazon = { ...s, socialSitesOff: ['amazon'] };
+ok('unticked site is not timed', tracked('amazon.com', offAmazon) === false && tracked('smile.amazon.com', offAmazon) === false);
+ok('other sites still timed when one is unticked', tracked('youtube.com', offAmazon) === true);
+const offX = { ...s, socialSitesOff: ['x'] };
+ok('unticking X covers both x.com and twitter.com', tracked('x.com', offX) === false && tracked('mobile.twitter.com', offX) === false);
+ok('an unticked site with its own limit is still timed', tracked('amazon.com', { ...offAmazon, siteLimits: { 'amazon.com': 600000 } }) === true);
+ok('unticked site limit is 0 (off)', env.run(`getDomainLimit('amazon.com', {limitSocialOnly:true, socialSitesOff:['amazon'], defaultLimit:1800000, siteLimits:{}})`) === 0);
+ok('garbage in socialSitesOff is ignored', tracked('youtube.com', { ...s, socialSitesOff: 'youtube' }) === true);
+
+// 1c) The popup's list and the worker's list have the same sites.
+const popupSrc = fs.readFileSync(path.join(ROOT, 'popup.js'), 'utf8');
+const ids = (src, re) => [...src.matchAll(re)].map((m) => m[1]).sort().join();
+const bgIds = ids(source.slice(source.indexOf('const SOCIAL_GROUPS'), source.indexOf('const SOCIAL_SITES')), /id: '([a-z]+)'/g);
+const popIds = ids(popupSrc.slice(popupSrc.indexOf('const SOCIAL_GROUPS'), popupSrc.indexOf('];', popupSrc.indexOf('const SOCIAL_GROUPS'))), /id: '([a-z]+)'/g);
+ok('popup and worker list the same site ids', bgIds && bgIds === popIds, `${bgIds} vs ${popIds}`);
+
 // 2) Defaults: new installs on, existing users untouched.
 const fresh = boot();
 for (const fn of fresh.listeners.installed) await fn({ reason: 'install' });

@@ -24,6 +24,14 @@ const LIMIT_CHIPS = [15, 30, 45, 60, 90];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
 const SHOO_HOLD_CHIPS = [3, 5, 10, 20, 30];
 const DEFAULT_SHOO_HOLD_SECONDS = 10;
+// Same ids as SOCIAL_GROUPS in background.js, which owns the domains.
+const SOCIAL_GROUPS = [
+  { id: 'youtube', name: 'YouTube' }, { id: 'instagram', name: 'Instagram' }, { id: 'facebook', name: 'Facebook' },
+  { id: 'x', name: 'X (Twitter)' }, { id: 'tiktok', name: 'TikTok' }, { id: 'reddit', name: 'Reddit' },
+  { id: 'snapchat', name: 'Snapchat' }, { id: 'pinterest', name: 'Pinterest' }, { id: 'twitch', name: 'Twitch' },
+  { id: 'threads', name: 'Threads' }, { id: 'tumblr', name: 'Tumblr' }, { id: 'bluesky', name: 'Bluesky' },
+  { id: 'amazon', name: 'Amazon' }
+];
 
 /**
  * Dynamically populated from the Supabase manifest at startup.
@@ -41,6 +49,7 @@ let settings = {
   catVideoFile: DEFAULT_VIDEO_FILE,
   trackedSitesOnly: false,
   limitSocialOnly: false,
+  socialSitesOff: [],
   shareUsage: true,
   randomCatVideo: false
 };
@@ -162,6 +171,7 @@ function render() {
   if (shareUsage) shareUsage.checked = settings.shareUsage !== false;
   const socialOnly = document.getElementById('limit-social-only');
   if (socialOnly) socialOnly.checked = settings.limitSocialOnly === true;
+  renderSocialSites();
   const trackedOnly = document.getElementById('tracked-sites-only');
   if (trackedOnly) trackedOnly.checked = settings.trackedSitesOnly === true;
   const randomCat = document.getElementById('random-cat-toggle');
@@ -225,6 +235,26 @@ function renderCatLingerChips() {
 function getShooHoldSeconds() {
   const n = Math.round(Number(settings.shooHoldSeconds));
   return Number.isFinite(n) && n >= 1 ? Math.min(60, n) : DEFAULT_SHOO_HOLD_SECONDS;
+}
+
+function renderSocialSites() {
+  const el = document.getElementById('social-sites');
+  if (!el) return;
+  const off = Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : [];
+  el.classList.toggle('is-disabled', settings.limitSocialOnly !== true);
+  el.innerHTML = SOCIAL_GROUPS.map(({ id, name }) => {
+    const on = !off.includes(id);
+    return `<label class="site-chip${on ? '' : ' is-off'}"><input type="checkbox" data-site="${id}"${on ? ' checked' : ''}>${escapeHTML(name)}</label>`;
+  }).join('');
+  el.querySelectorAll('input[data-site]').forEach((box) => {
+    box.addEventListener('change', () => {
+      const current = new Set(Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : []);
+      if (box.checked) current.delete(box.dataset.site); else current.add(box.dataset.site);
+      settings.socialSitesOff = [...current];
+      renderSocialSites();
+      queueSave();
+    });
+  });
 }
 
 function renderShooHoldChips() {
@@ -486,6 +516,7 @@ function bindEvents() {
 
   document.getElementById('limit-social-only').addEventListener('change', (e) => {
     settings.limitSocialOnly = e.target.checked;
+    renderSocialSites();
     queueSave();
     showToast(
       settings.limitSocialOnly
