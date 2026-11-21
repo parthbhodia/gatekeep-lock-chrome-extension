@@ -1,5 +1,5 @@
-// Unit test for the "social sites only" default: new installs only time social
-// sites; existing users keep timing everything. Loads the REAL background.js.
+// Unit test for the "social sites only" default: new installs (and existing users
+// who never customised their sites) only time social sites. Loads the REAL background.js.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,10 +64,19 @@ for (const fn of fresh.listeners.installed) await fn({ reason: 'install' });
 ok('fresh install: social-only is ON', fresh.local.settings.limitSocialOnly === true);
 const existing = boot({ defaultLimit: 1800000, siteLimits: {}, excludedSites: [], enabled: true });
 for (const fn of existing.listeners.installed) await fn({ reason: 'update' });
-ok('existing user after update: social-only stays OFF', existing.local.settings.limitSocialOnly === false);
+ok('existing user who never customised sites: switched ON once on update', existing.local.settings.limitSocialOnly === true);
+const custom = boot({ enabled: true, siteLimits: { 'github.com': 600000 } });
+for (const fn of custom.listeners.installed) await fn({ reason: 'update' });
+ok('existing user with their own site list: left as they were (OFF)', custom.local.settings.limitSocialOnly === false);
+const listed = boot({ enabled: true, trackedSitesOnly: true, siteLimits: {} });
+for (const fn of listed.listeners.installed) await fn({ reason: 'update' });
+ok('existing user in list-only mode: left as they were (OFF)', listed.local.settings.limitSocialOnly === false);
+const chose = boot({ enabled: true, limitSocialOnly: false, siteLimits: {} });
+for (const fn of chose.listeners.installed) await fn({ reason: 'update' });
+ok('a user who already has the setting keeps their choice', chose.local.settings.limitSocialOnly === false);
 const opted = boot({ enabled: true, limitSocialOnly: true });
 for (const fn of opted.listeners.installed) await fn({ reason: 'update' });
-ok('existing user who already chose it keeps it', opted.local.settings.limitSocialOnly === true);
+ok('already ON stays ON', opted.local.settings.limitSocialOnly === true);
 
 const failed = results.filter((r) => !r.pass).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

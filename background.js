@@ -253,6 +253,9 @@ async function init() {
   } else {
     // Always merge defaults so any newly-added settings field is present for
     // existing users without needing per-field migration guards.
+    // Existing users get social-only too, once, if they never customised which sites are timed.
+    // Anyone with their own site list or list-only mode keeps exactly what they had.
+    const untouched = settings.trackedSitesOnly !== true && Object.keys(settings.siteLimits || {}).length === 0;
     await chrome.storage.local.set({
       settings: {
         defaultLimit: 30 * 60 * 1000,
@@ -260,7 +263,7 @@ async function init() {
         shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
-        limitSocialOnly: false,
+        limitSocialOnly: untouched,
         randomCatVideo: false,
         ...settings
       }
