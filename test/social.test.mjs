@@ -46,10 +46,10 @@ const s = { limitSocialOnly: true, siteLimits: {}, trackedSitesOnly: false };
 // 1) The matcher: social sites and their subdomains, nothing else.
 const env = boot();
 const tracked = (d, settings = s) => env.run(`isTrackedDomain(${JSON.stringify(d)}, ${JSON.stringify(settings)})`);
-for (const d of ['youtube.com', 'instagram.com', 'm.facebook.com', 'old.reddit.com', 'x.com', 'tiktok.com']) {
+for (const d of ['amazon.com', 'smile.amazon.com', 'youtube.com', 'instagram.com', 'm.facebook.com', 'old.reddit.com', 'x.com', 'tiktok.com']) {
   ok(`social: ${d} is timed`, tracked(d) === true);
 }
-for (const d of ['github.com', 'docs.google.com', 'notyoutube.com', 'fakex.com', 'nytimes.com']) {
+for (const d of ['notamazon.com', 'github.com', 'docs.google.com', 'notyoutube.com', 'fakex.com', 'nytimes.com']) {
   ok(`not social: ${d} is not timed`, tracked(d) === false);
 }
 ok('a site on Limit by site is timed even when not social', tracked('github.com', { ...s, siteLimits: { 'github.com': 600000 } }) === true);

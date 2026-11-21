@@ -190,10 +190,10 @@ function bufferToBase64(buffer) {
   return btoa(binary);
 }
 
-/** Sites that count as "social" when limitSocialOnly is on. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
+/** Sites timed by default when limitSocialOnly is on: social media, plus amazon.com. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
 const SOCIAL_SITES = [
   'youtube.com', 'youtu.be', 'instagram.com', 'facebook.com', 'x.com', 'twitter.com', 'tiktok.com',
-  'reddit.com', 'snapchat.com', 'pinterest.com', 'twitch.tv', 'threads.net', 'threads.com', 'tumblr.com', 'bsky.app'
+  'reddit.com', 'snapchat.com', 'pinterest.com', 'twitch.tv', 'threads.net', 'threads.com', 'tumblr.com', 'bsky.app', 'amazon.com'
 ];
 
 function isSocialDomain(domain) {
