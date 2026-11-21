@@ -190,6 +190,74 @@ function bufferToBase64(buffer) {
   return btoa(binary);
 }
 
+// ─── Anonymous usage stats ────────────────────────────────────────────────────
+// Counts only, so we can see whether the cat loads and how breaks go. Never a site
+// name, URL, page content, or anything that identifies a person: every event has a
+// fixed list of allowed fields, and anything else is dropped before sending.
+// Users can turn it off under Settings; see PRIVACY.md for the full list.
+
+const USAGE_URL = 'https://pozytitruvcthhfvpqic.supabase.co/rest/v1/usage_events';
+const USAGE_EVENTS = {
+  extension_start: [
+    'reason', 'defaultLimitMin', 'lingerMin', 'shooHoldSec', 'socialOnly', 'listedOnly',
+    'randomCat', 'siteLimitCount', 'excludedCount'
+  ],
+  cat_shown: ['outcome', 'reason'],
+  break_ended: ['how', 'shownSec']
+};
+
+function cleanUsageValue(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.min(1e6, Math.max(0, Math.round(value * 10) / 10));
+  if (typeof value === 'string' && /^[a-z0-9_.-]{1,30}$/.test(value)) return value;
+  return undefined;
+}
+
+async function recordUsage(name, props = {}) {
+  try {
+    const allowed = USAGE_EVENTS[name];
+    if (!allowed) return;
+    const { settings } = await chrome.storage.local.get('settings');
+    if (settings?.shareUsage === false) return;
+
+    const clean = {};
+    for (const key of allowed) {
+      const value = cleanUsageValue(props?.[key]);
+      if (value !== undefined) clean[key] = value;
+    }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10 * 1000);
+    try {
+      await fetch(USAGE_URL, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ name, version: chrome.runtime.getManifest().version, props: clean }),
+        signal: ctrl.signal
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    // Best effort: a failed report is simply dropped.
+  }
+}
+
+async function reportStart(reason) {
+  const { settings = {} } = await chrome.storage.local.get('settings');
+  await recordUsage('extension_start', {
+    reason,
+    defaultLimitMin: Math.round((settings.defaultLimit || 0) / 60000),
+    lingerMin: settings.catLingerMinutes,
+    shooHoldSec: settings.shooHoldSeconds,
+    socialOnly: settings.limitSocialOnly === true,
+    listedOnly: settings.trackedSitesOnly === true,
+    randomCat: settings.randomCatVideo === true,
+    siteLimitCount: Object.keys(settings.siteLimits || {}).length,
+    excludedCount: (settings.excludedSites || []).length
+  });
+}
+
 /** Sites timed by default when limitSocialOnly is on: social media, plus amazon.com. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
 const SOCIAL_SITES = [
   'youtube.com', 'youtu.be', 'instagram.com', 'facebook.com', 'x.com', 'twitter.com', 'tiktok.com',
@@ -224,10 +292,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'update') purgeStaleVideoCaches();
     warmSelectedVideo();
   }
+  reportStart(details.reason);
 });
 chrome.runtime.onStartup.addListener(async () => {
   await init();
   warmSelectedVideo(); // Re-cache only if browser data was cleared
+  reportStart('startup');
 });
 
 async function init() {
@@ -243,7 +313,8 @@ async function init() {
         shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
-        limitSocialOnly: true, // new installs start with social sites only; existing users are left as they were
+        limitSocialOnly: true, // new installs start with social sites only
+        shareUsage: true,
         randomCatVideo: false
       },
       siteTime: {},
@@ -264,6 +335,7 @@ async function init() {
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
         limitSocialOnly: untouched,
+        shareUsage: true,
         randomCatVideo: false,
         ...settings
       }
@@ -738,6 +810,10 @@ async function handleMessage(msg) {
       const buffer = (await loadVideoBuffer(msg.file)) || (await loadAnyCachedVideoBuffer());
       if (!buffer) return { ok: false };
       return { ok: true, base64: bufferToBase64(buffer) };
+    }
+    case 'USAGE': {
+      void recordUsage(msg.name, msg.props);
+      return { ok: true };
     }
     case 'GET_CAT_VIDEOS_LIST': {
       const files = await getVideoManifest();

@@ -6,7 +6,7 @@
 
 It’s **more flexible than a typical site blocker**: set a global default, **override per site**, **exclude** what you want, or even **only track a short list** of domains. **Random cat** mode keeps breaks surprising. **Preview** the effect anytime; **shoo** the cat away when you’re done.
 
-No cloud sync, no account, no ads — everything stays on your device.
+No cloud sync, no account, no ads — your sites and time totals stay on your device.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Cat%20Break-orange?logo=googlechrome)](https://chromewebstore.google.com/detail/cat-break/lnmigkmapjkmfpnjlhnmdkihpnlihagh)
 
@@ -63,7 +63,7 @@ Per-site and exclusion options live under **Settings**; the **Cat** tab focuses 
 - **Hard to ignore** — full-screen cat, not a tiny toast.
 - **Not punishing** — the overlay leaves after your break; you stay in control.
 - **Honest timing** — only counts real **active** tab time.
-- **Private** — zero data sent anywhere; see [PRIVACY.md](./PRIVACY.md).
+- **Private** — your browsing never leaves your device; only anonymous usage counts are sent, and you can turn that off in Settings. See [PRIVACY.md](./PRIVACY.md).
 
 ---
 
@@ -107,7 +107,7 @@ Yes — no ads, no account.
 
 ## Privacy
 
-All data stays in **`chrome.storage`** on your device. Nothing is collected for analytics or sent to a server. Full details: [PRIVACY.md](./PRIVACY.md).
+Your settings and site time totals stay in **`chrome.storage`** on your device. The extension sends a few anonymous usage counts (whether the cat loaded, how breaks end, which settings are in use; never sites or anything identifying) and you can turn that off under Settings. The table behind them is in [`docs/usage-events.sql`](./docs/usage-events.sql). Full details: [PRIVACY.md](./PRIVACY.md).
 
 ---
 

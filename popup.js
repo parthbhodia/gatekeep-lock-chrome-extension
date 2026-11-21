@@ -41,6 +41,7 @@ let settings = {
   catVideoFile: DEFAULT_VIDEO_FILE,
   trackedSitesOnly: false,
   limitSocialOnly: false,
+  shareUsage: true,
   randomCatVideo: false
 };
 let siteTime = {};
@@ -157,6 +158,8 @@ function pickRandomCatFileForPreview() {
 
 function render() {
   document.getElementById('enabled-toggle').checked = settings.enabled !== false;
+  const shareUsage = document.getElementById('share-usage');
+  if (shareUsage) shareUsage.checked = settings.shareUsage !== false;
   const socialOnly = document.getElementById('limit-social-only');
   if (socialOnly) socialOnly.checked = settings.limitSocialOnly === true;
   const trackedOnly = document.getElementById('tracked-sites-only');
@@ -473,6 +476,12 @@ function bindEvents() {
   document.getElementById('enabled-toggle').addEventListener('change', (e) => {
     settings.enabled = e.target.checked;
     queueSave();
+  });
+
+  document.getElementById('share-usage').addEventListener('change', (e) => {
+    settings.shareUsage = e.target.checked;
+    queueSave();
+    showToast(settings.shareUsage ? 'Sharing anonymous usage stats' : 'Usage stats are off', 'info');
   });
 
   document.getElementById('limit-social-only').addEventListener('change', (e) => {

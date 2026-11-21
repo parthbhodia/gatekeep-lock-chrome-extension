@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === 'SHOO_CAT') {
     if (catOverlay) {
-      dismissWithOptions({ resetSite: true, resumePaused: true });
+      dismissWithOptions({ resetSite: true, resumePaused: true, how: 'popup' });
       safeSendResponse(sendResponse, { ok: true, dismissed: true });
       return;
     }
@@ -245,18 +245,21 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   }, 250);
 
   hideTimer = setTimeout(() => {
-    dismissWithOptions({ resetSite: true, resumePaused: true });
+    dismissWithOptions({ resetSite: true, resumePaused: true, how: 'timer' });
   }, safeLingerMs);
 
+  let failure = 'no_clip';
   try {
     const src = await withTimeout(getCatVideoUrl(safeVideoFile), VIDEO_LOAD_TIMEOUT_MS);
     if (!src) throw new Error('clip unavailable');
+    failure = 'play_failed';
     video.src = src;
     await video.play();
     setupCanvas(video, canvas, buffer);
     drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
-  } catch {
-    showStaticCat();
+    reportUsage('cat_shown', { outcome: 'video' });
+  } catch (error) {
+    showStaticCat(error?.message === 'timed out' ? 'timeout' : failure);
   }
 }
 
@@ -398,9 +401,10 @@ function withTimeout(promise, ms) {
 }
 
 /** The clip couldn't be had (offline, host refusing): put the app icon where the cat would be, so the break still has one. */
-function showStaticCat() {
+function showStaticCat(reason) {
   const wrap = catOverlay?.querySelector('.fcb-cat-wrap');
   if (!wrap || !isExtensionContextValid()) return;
+  reportUsage('cat_shown', { outcome: 'static', reason });
   catOverlay.classList.add('fcb-cat-static');
   const img = document.createElement('img');
   img.className = 'fcb-static-cat';
@@ -547,7 +551,7 @@ function stepShooHold() {
 
   if (progress >= 1) {
     stopShooHold();
-    dismissWithOptions({ resetSite: true, resumePaused: true });
+    dismissWithOptions({ resetSite: true, resumePaused: true, how: 'hold' });
     return;
   }
   holdRafId = requestAnimationFrame(stepShooHold);
@@ -573,12 +577,18 @@ function stopShooHold() {
 }
 
 function dismiss() {
-  dismissWithOptions({ resetSite: false, resumePaused: false });
+  dismissWithOptions({ resetSite: false, resumePaused: false, how: 'other' });
+}
+
+/** Anonymous, fixed-shape counts only; the background drops anything else (see PRIVACY.md). */
+function reportUsage(name, props) {
+  safeSendRuntimeMessage({ type: 'USAGE', name, props });
 }
 
 function dismissWithOptions(options = {}) {
-  const { resetSite = false, resumePaused = false } = options;
+  const { resetSite = false, resumePaused = false, how = 'other' } = options;
   if (!catOverlay) return;
+  reportUsage('break_ended', { how, shownSec: (Date.now() - catShownAt) / 1000 });
 
   const overlayEl = catOverlay;
   catOverlay = null;
