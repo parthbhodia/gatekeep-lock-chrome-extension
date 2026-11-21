@@ -75,6 +75,9 @@ async function main() {
   // 1) Initialize the worker (reason chrome_update skips the video re-cache path)
   await fire('installed', [{ reason: 'chrome_update' }]);
   ok('init created settings', Boolean(local.settings) && local.settings.enabled === true);
+  // This test is about the daily reset, using example.com as the active site. New installs only
+  // time social sites, so time every site here, as an existing user would.
+  local.settings.limitSocialOnly = false;
 
   // 2) Simulate having crossed midnight with prior accumulated time on two sites
   local.lastReset = 'Mon Jan 01 1990';

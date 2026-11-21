@@ -190,6 +190,24 @@ function bufferToBase64(buffer) {
   return btoa(binary);
 }
 
+/** Sites that count as "social" when limitSocialOnly is on. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
+const SOCIAL_SITES = [
+  'youtube.com', 'youtu.be', 'instagram.com', 'facebook.com', 'x.com', 'twitter.com', 'tiktok.com',
+  'reddit.com', 'snapchat.com', 'pinterest.com', 'twitch.tv', 'threads.net', 'threads.com', 'tumblr.com', 'bsky.app'
+];
+
+function isSocialDomain(domain) {
+  return SOCIAL_SITES.some((site) => domain === site || domain.endsWith(`.${site}`));
+}
+
+/** Does time on this domain count toward a break at all? */
+function isTrackedDomain(domain, settings) {
+  if (hasExplicitSiteLimit(domain, settings)) return true;
+  if (settings.trackedSitesOnly === true) return false;
+  if (settings.limitSocialOnly === true) return isSocialDomain(domain);
+  return true;
+}
+
 let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
@@ -225,6 +243,7 @@ async function init() {
         shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
+        limitSocialOnly: true, // new installs start with social sites only; existing users are left as they were
         randomCatVideo: false
       },
       siteTime: {},
@@ -241,6 +260,7 @@ async function init() {
         shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
+        limitSocialOnly: false,
         randomCatVideo: false,
         ...settings
       }
@@ -408,7 +428,7 @@ async function flush() {
     return;
   }
 
-  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) {
+  if (!isTrackedDomain(domain, settings)) {
     segmentStart = Date.now();
     await persistTrackingState();
     return;
@@ -435,7 +455,7 @@ async function checkAndNotify() {
   if (!settings.enabled) return;
   if (isExcludedDomain(domain, settings.excludedSites)) return;
 
-  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) return;
+  if (!isTrackedDomain(domain, settings)) return;
 
   const timeSpent = siteTime[domain] || 0;
   const limit = getDomainLimit(domain, settings);
@@ -496,6 +516,7 @@ function getDomainLimit(domain, settings) {
   const alt = `www.${domain}`;
   if (alt in siteLimits) return siteLimits[alt];
   if (settings.trackedSitesOnly === true) return 0;
+  if (settings.limitSocialOnly === true && !isSocialDomain(domain)) return 0;
   return settings.defaultLimit ?? 30 * 60 * 1000;
 }
 

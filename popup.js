@@ -40,6 +40,7 @@ let settings = {
   shooHoldSeconds: DEFAULT_SHOO_HOLD_SECONDS,
   catVideoFile: DEFAULT_VIDEO_FILE,
   trackedSitesOnly: false,
+  limitSocialOnly: false,
   randomCatVideo: false
 };
 let siteTime = {};
@@ -57,7 +58,7 @@ const TOUR_STEPS = [
   {
     tab: 'cat',
     title: 'Time limit',
-    body: 'How many minutes before the cat shows up. Pick a quick option or type any number — this applies to every site unless you set a custom one.',
+    body: 'How many minutes before the cat shows up. Pick a quick option or type any number — this applies to the sites being timed (social media to start with) unless you set a custom one.',
     targetSelector: '#tour-anchor-default-limit'
   },
   {
@@ -156,6 +157,8 @@ function pickRandomCatFileForPreview() {
 
 function render() {
   document.getElementById('enabled-toggle').checked = settings.enabled !== false;
+  const socialOnly = document.getElementById('limit-social-only');
+  if (socialOnly) socialOnly.checked = settings.limitSocialOnly === true;
   const trackedOnly = document.getElementById('tracked-sites-only');
   if (trackedOnly) trackedOnly.checked = settings.trackedSitesOnly === true;
   const randomCat = document.getElementById('random-cat-toggle');
@@ -470,6 +473,17 @@ function bindEvents() {
   document.getElementById('enabled-toggle').addEventListener('change', (e) => {
     settings.enabled = e.target.checked;
     queueSave();
+  });
+
+  document.getElementById('limit-social-only').addEventListener('change', (e) => {
+    settings.limitSocialOnly = e.target.checked;
+    queueSave();
+    showToast(
+      settings.limitSocialOnly
+        ? 'Only social sites (and your list) are timed now'
+        : 'Default limit applies to all non-excluded sites again',
+      'info'
+    );
   });
 
   document.getElementById('tracked-sites-only').addEventListener('change', (e) => {
