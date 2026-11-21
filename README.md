@@ -107,7 +107,7 @@ Yes — no ads, no account.
 
 ## Privacy
 
-Your settings and site time totals stay in **`chrome.storage`** on your device. The extension sends a few anonymous usage counts (whether the cat loaded, how breaks end, which settings are in use; never sites or anything identifying) and you can turn that off under Settings. The table behind them is in [`docs/usage-events.sql`](./docs/usage-events.sql). Full details: [PRIVACY.md](./PRIVACY.md).
+Your settings and site time totals stay in **`chrome.storage`** on your device. The extension sends a few anonymous usage counts (whether the cat loaded, how breaks end, which settings are in use, and whether a break was on a built-in site like YouTube or on another site; never any other site name or anything identifying) and you can turn that off under Settings. The table behind them is in [`docs/usage-events.sql`](./docs/usage-events.sql). Full details: [PRIVACY.md](./PRIVACY.md).
 
 ---
 

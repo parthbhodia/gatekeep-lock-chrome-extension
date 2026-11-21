@@ -582,7 +582,8 @@ function dismiss() {
 
 /** Anonymous, fixed-shape counts only; the background drops anything else (see PRIVACY.md). */
 function reportUsage(name, props) {
-  safeSendRuntimeMessage({ type: 'USAGE', name, props });
+  // The domain goes only as far as the background, which reduces it to one of our built-in sites or 'other'.
+  safeSendRuntimeMessage({ type: 'USAGE', name, props: { ...props, domain: currentDomain } });
 }
 
 function dismissWithOptions(options = {}) {

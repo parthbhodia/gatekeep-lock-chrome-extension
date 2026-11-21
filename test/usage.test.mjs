@@ -87,8 +87,25 @@ const ALLOWED_START = ['reason', 'defaultLimitMin', 'lingerMin', 'shooHoldSec', 
   await sleep(40);
   const names = env.sent.map((e) => e.body.name);
   ok('known events are sent, unknown event names are not', names.join() === 'cat_shown,break_ended,cat_shown', names.join());
-  ok('extra fields (domain, url, free text) are dropped', JSON.stringify(env.sent[0].body.props) === '{"outcome":"static","reason":"no_clip"}' && !('note' in env.sent[1].body.props));
-  ok('numbers are rounded, strings that are not simple tokens are dropped', env.sent[1].body.props.shownSec === 12.3 && Object.keys(env.sent[2].body.props).length === 0);
+  ok('extra fields (url, free text) are dropped; an unlisted site becomes "other"', JSON.stringify(env.sent[0].body.props) === '{"outcome":"static","reason":"no_clip","site":"other"}' && !('note' in env.sent[1].body.props));
+  ok('numbers are rounded, strings that are not simple tokens are dropped', env.sent[1].body.props.shownSec === 12.3 && JSON.stringify(env.sent[2].body.props) === '{"site":"other"}');
+  ok('the real domain never appears in anything sent', !JSON.stringify(env.sent).includes('bank.com'));
+}
+
+// 3b) Site: only our built-in sites are ever named; everything else is "other".
+{
+  const env = boot({ enabled: true });
+  const ask = (domain, extra = {}) => env.message({ type: 'USAGE', name: 'break_ended', props: { how: 'timer', domain, ...extra } });
+  await ask('youtube.com'); await ask('m.facebook.com'); await ask('www.amazon.com'); await ask('github.com'); await ask('notyoutube.com');
+  await ask('secret-bank.example', { site: 'youtube.com' });   // a caller cannot choose the label
+  await ask(undefined); await ask({ evil: true });
+  await sleep(60);
+  const sites = env.sent.map((e) => e.body.props.site);
+  ok('built-in sites are named, subdomains map to the base site', sites.slice(0, 3).join() === 'youtube.com,facebook.com,amazon.com', sites.slice(0, 3).join());
+  ok('any other site is "other", including look-alikes', sites[3] === 'other' && sites[4] === 'other');
+  ok('a caller-supplied site label is ignored', sites[5] === 'other');
+  ok('missing or odd domains are "other"', sites[6] === 'other' && sites[7] === 'other');
+  ok('no unlisted domain appears anywhere on the wire', !JSON.stringify(env.sent).match(/github|secret-bank|notyoutube/));
 }
 
 // 4) The off switch.

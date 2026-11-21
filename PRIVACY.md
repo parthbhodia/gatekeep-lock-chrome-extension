@@ -7,7 +7,7 @@ website is covered separately at https://www.catbreak.com/privacy.html — unlik
 extension, that website does use Google Analytics to count visits.
 
 ## Summary
-- We do not collect, sell, or transmit personal data, and we never see which sites you visit.
+- We do not collect, sell, or transmit personal data, and we never see your browsing history.
 - Your settings and site time totals stay on your device and are removed when you uninstall the extension or clear its storage.
 - The extension sends a few **anonymous usage statistics** (counts only, listed below) so we can tell whether the cat loads and how breaks go. It is on by default and you can turn it off under **Settings → Share anonymous usage stats**.
 - Cat videos are loaded and cached from our Supabase storage CDN; no executable code is fetched remotely.
@@ -31,10 +31,12 @@ extension, that website does use Google Analytics to count visits.
 ## Anonymous usage statistics
 Sent to our own Supabase project (`pozytitruvcthhfvpqic.supabase.co`), on by default, and switched off at any time under **Settings → Share anonymous usage stats**. We use them to find and fix problems (for example, a cat that fails to load) and to see which settings people actually use. Only these reports are sent:
 - **When the extension starts:** its version, why it started (install, update or browser start), and your settings as plain numbers and on/off values: default limit, auto-dismiss minutes, shoo hold seconds, whether "only social media sites", "only listed sites" and random cat are on, and how many sites are in your limit and excluded lists.
-- **When a break appears:** whether the animated cat played or the fallback icon was shown, and for the fallback a short reason code such as `no_clip`, `timeout` or `play_failed`.
-- **When a break ends:** how it ended (Esc held, the timer ran out, or the popup's Shoo button) and how many seconds it was on screen.
+- **When a break appears:** whether the animated cat played or the fallback icon was shown, for the fallback a short reason code such as `no_clip`, `timeout` or `play_failed`, and which built-in site it was on.
+- **When a break ends:** how it ended (Esc held, the timer ran out, or the popup's Shoo button), how many seconds it was on screen, and which built-in site it was on.
 
-Never sent: site names or URLs, the contents of any page, your site lists, your browsing history, or anything that identifies you. No account, device ID or other persistent identifier is attached, so one report cannot be linked to another. As with the cat videos, Supabase's own request logs may include standard request metadata such as your IP address; we do not store it with the statistics.
+The "built-in site" is one of a fixed list that Cat Break times by default (YouTube, Instagram, Facebook, X/Twitter, TikTok, Reddit, Snapchat, Pinterest, Twitch, Threads, Tumblr, Bluesky and Amazon), or the word `other`. The name of any site that is not on that list is never sent.
+
+Never sent: the name or URL of any site outside that fixed list, the contents of any page, your own site lists, your browsing history, or anything that identifies you. No account, device ID or other persistent identifier is attached, so one report cannot be linked to another. As with the cat videos, Supabase's own request logs may include standard request metadata such as your IP address; we do not store it with the statistics.
 
 ## Data sharing
 - We do not share your settings, usage times, or browsing data with anyone.

@@ -24,3 +24,7 @@ create policy "extension can insert usage events"
 --   select props->>'outcome' as outcome, props->>'reason' as reason, count(*)
 --   from usage_events where name = 'cat_shown' and created_at > now() - interval '7 days'
 --   group by 1, 2 order by 3 desc;
+
+-- Example: which built-in sites trigger the most breaks?
+--   select props->>'site' as site, count(*) from usage_events
+--   where name = 'break_ended' group by 1 order by 2 desc;

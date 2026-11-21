@@ -202,8 +202,8 @@ const USAGE_EVENTS = {
     'reason', 'defaultLimitMin', 'lingerMin', 'shooHoldSec', 'socialOnly', 'listedOnly',
     'randomCat', 'siteLimitCount', 'excludedCount'
   ],
-  cat_shown: ['outcome', 'reason'],
-  break_ended: ['how', 'shownSec']
+  cat_shown: ['outcome', 'reason', 'site'],
+  break_ended: ['how', 'shownSec', 'site']
 };
 
 function cleanUsageValue(value) {
@@ -266,6 +266,12 @@ const SOCIAL_SITES = [
 
 function isSocialDomain(domain) {
   return SOCIAL_SITES.some((site) => domain === site || domain.endsWith(`.${site}`));
+}
+
+/** For usage stats: the built-in site a domain belongs to (m.youtube.com -> youtube.com), else 'other'. */
+function usageSiteLabel(domain) {
+  const d = typeof domain === 'string' ? domain.toLowerCase() : '';
+  return SOCIAL_SITES.find((site) => d === site || d.endsWith(`.${site}`)) || 'other';
 }
 
 /** Does time on this domain count toward a break at all? */
@@ -812,7 +818,9 @@ async function handleMessage(msg) {
       return { ok: true, base64: bufferToBase64(buffer) };
     }
     case 'USAGE': {
-      void recordUsage(msg.name, msg.props);
+      // `site` is only ever one of our built-in sites or 'other': the real domain is used here to pick
+      // one and is never forwarded, and a site passed in by the caller is ignored.
+      void recordUsage(msg.name, { ...msg.props, site: usageSiteLabel(msg.props?.domain) });
       return { ok: true };
     }
     case 'GET_CAT_VIDEOS_LIST': {
