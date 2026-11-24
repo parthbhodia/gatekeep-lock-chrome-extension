@@ -22,6 +22,16 @@ function fileToLabel(filename) {
 
 const LIMIT_CHIPS = [15, 30, 45, 60, 90];
 const CAT_LINGER_CHIPS = [0.2, 0.5, 1, 2, 5];
+const SHOO_HOLD_CHIPS = [3, 5, 10, 20, 30];
+const DEFAULT_SHOO_HOLD_SECONDS = 10;
+// Same ids as SOCIAL_GROUPS in background.js, which owns the domains.
+const SOCIAL_GROUPS = [
+  { id: 'youtube', name: 'YouTube' }, { id: 'instagram', name: 'Instagram' }, { id: 'facebook', name: 'Facebook' },
+  { id: 'x', name: 'X (Twitter)' }, { id: 'tiktok', name: 'TikTok' }, { id: 'reddit', name: 'Reddit' },
+  { id: 'snapchat', name: 'Snapchat' }, { id: 'pinterest', name: 'Pinterest' }, { id: 'twitch', name: 'Twitch' },
+  { id: 'threads', name: 'Threads' }, { id: 'tumblr', name: 'Tumblr' }, { id: 'bluesky', name: 'Bluesky' },
+  { id: 'amazon', name: 'Amazon' }
+];
 
 /**
  * Dynamically populated from the Supabase manifest at startup.
@@ -35,8 +45,12 @@ let settings = {
   excludedSites: [],
   enabled: true,
   catLingerMinutes: 2,
+  shooHoldSeconds: DEFAULT_SHOO_HOLD_SECONDS,
   catVideoFile: DEFAULT_VIDEO_FILE,
   trackedSitesOnly: false,
+  limitSocialOnly: false,
+  socialSitesOff: [],
+  shareUsage: true,
   randomCatVideo: false
 };
 let siteTime = {};
@@ -45,6 +59,7 @@ let isSaving = false;
 let toastTimer = null;
 let defaultLimitToastTimer = null;
 let catLingerToastTimer = null;
+let shooHoldToastTimer = null;
 
 const TOUR_STORAGE_KEY = 'catBreakTourCompleted';
 let tourStepIndex = 0;
@@ -53,7 +68,7 @@ const TOUR_STEPS = [
   {
     tab: 'cat',
     title: 'Time limit',
-    body: 'How many minutes before the cat shows up. Pick a quick option or type any number — this applies to every site unless you set a custom one.',
+    body: 'How many minutes before the cat shows up. Pick a quick option or type any number — this applies to the sites being timed (social media to start with) unless you set a custom one.',
     targetSelector: '#tour-anchor-default-limit'
   },
   {
@@ -152,16 +167,23 @@ function pickRandomCatFileForPreview() {
 
 function render() {
   document.getElementById('enabled-toggle').checked = settings.enabled !== false;
+  const shareUsage = document.getElementById('share-usage');
+  if (shareUsage) shareUsage.checked = settings.shareUsage !== false;
+  const socialOnly = document.getElementById('limit-social-only');
+  if (socialOnly) socialOnly.checked = settings.limitSocialOnly === true;
+  renderSocialSites();
   const trackedOnly = document.getElementById('tracked-sites-only');
   if (trackedOnly) trackedOnly.checked = settings.trackedSitesOnly === true;
   const randomCat = document.getElementById('random-cat-toggle');
   if (randomCat) randomCat.checked = settings.randomCatVideo === true;
   syncDefaultLimitInputs(Math.max(1, Math.round((settings.defaultLimit || (30 * 60 * 1000)) / 60000)));
   document.getElementById('cat-linger').value = Math.max(0.1, Number(settings.catLingerMinutes ?? 2));
+  document.getElementById('shoo-hold').value = getShooHoldSeconds();
   document.getElementById('cat-video').value = settings.catVideoFile;
 
   renderDefaultLimitChips();
   renderCatLingerChips();
+  renderShooHoldChips();
   renderStats();
   renderPerSiteChips();
   renderSiteLimits();
@@ -204,6 +226,47 @@ function renderCatLingerChips() {
       settings.catLingerMinutes = value;
       document.getElementById('cat-linger').value = value;
       renderCatLingerChips();
+      queueSave();
+    }
+  );
+}
+
+/** Whole seconds, 1–60; anything unset or garbled falls back to the default. */
+function getShooHoldSeconds() {
+  const n = Math.round(Number(settings.shooHoldSeconds));
+  return Number.isFinite(n) && n >= 1 ? Math.min(60, n) : DEFAULT_SHOO_HOLD_SECONDS;
+}
+
+function renderSocialSites() {
+  const el = document.getElementById('social-sites');
+  if (!el) return;
+  const off = Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : [];
+  el.classList.toggle('is-disabled', settings.limitSocialOnly !== true);
+  el.innerHTML = SOCIAL_GROUPS.map(({ id, name }) => {
+    const on = !off.includes(id);
+    return `<label class="site-chip${on ? '' : ' is-off'}"><input type="checkbox" data-site="${id}"${on ? ' checked' : ''}>${escapeHTML(name)}</label>`;
+  }).join('');
+  el.querySelectorAll('input[data-site]').forEach((box) => {
+    box.addEventListener('change', () => {
+      const current = new Set(Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : []);
+      if (box.checked) current.delete(box.dataset.site); else current.add(box.dataset.site);
+      settings.socialSitesOff = [...current];
+      renderSocialSites();
+      queueSave();
+    });
+  });
+}
+
+function renderShooHoldChips() {
+  renderChips(
+    document.getElementById('shoo-hold-chips'),
+    SHOO_HOLD_CHIPS,
+    getShooHoldSeconds(),
+    's',
+    (value) => {
+      settings.shooHoldSeconds = value;
+      document.getElementById('shoo-hold').value = value;
+      renderShooHoldChips();
       queueSave();
     }
   );
@@ -445,6 +508,24 @@ function bindEvents() {
     queueSave();
   });
 
+  document.getElementById('share-usage').addEventListener('change', (e) => {
+    settings.shareUsage = e.target.checked;
+    queueSave();
+    showToast(settings.shareUsage ? 'Sharing anonymous usage stats' : 'Usage stats are off', 'info');
+  });
+
+  document.getElementById('limit-social-only').addEventListener('change', (e) => {
+    settings.limitSocialOnly = e.target.checked;
+    renderSocialSites();
+    queueSave();
+    showToast(
+      settings.limitSocialOnly
+        ? 'Only social sites (and your list) are timed now'
+        : 'Default limit applies to all non-excluded sites again',
+      'info'
+    );
+  });
+
   document.getElementById('tracked-sites-only').addEventListener('change', (e) => {
     settings.trackedSitesOnly = e.target.checked;
     renderSiteLimits();
@@ -492,6 +573,16 @@ function bindEvents() {
     queueSave();
     clearTimeout(catLingerToastTimer);
     catLingerToastTimer = setTimeout(() => showToast(`Auto-dismiss set to ${settings.catLingerMinutes}m`, 'success'), 700);
+  });
+
+  document.getElementById('shoo-hold').addEventListener('input', (e) => {
+    const value = parseInt(e.target.value, 10);
+    if (!Number.isFinite(value)) return; // mid-edit; keep the last good value
+    settings.shooHoldSeconds = Math.min(60, Math.max(1, value));
+    renderShooHoldChips();
+    queueSave();
+    clearTimeout(shooHoldToastTimer);
+    shooHoldToastTimer = setTimeout(() => showToast(`Shoo hold set to ${settings.shooHoldSeconds}s`, 'success'), 700);
   });
 
   document.getElementById('add-btn').addEventListener('click', () => {
@@ -684,6 +775,7 @@ async function previewCatNow() {
       limit: 30 * 60 * 1000,
       lingerMs: Math.max(0.1, Number(settings.catLingerMinutes ?? 2)) * 60 * 1000,
       videoFile,
+      shooHoldMs: getShooHoldSeconds() * 1000,
       force: true
     });
     msg.textContent = settings.randomCatVideo ? 'Preview: one random cat on this tab.' : 'Preview shown on this tab.';
@@ -699,8 +791,6 @@ async function previewCatNow() {
    than a click, so it can't be done reflexively. Let go early and it resets.
    The content script dismisses on SHOO_CAT immediately — the hold is served
    here, and sending the message means it has already been earned. */
-const SHOO_HOLD_MS = 10 * 1000;
-
 function wireShooHold(button) {
   if (!button) return;
 
@@ -723,9 +813,10 @@ function wireShooHold(button) {
   const step = () => {
     if (!startedAt) return;
     const elapsed = Date.now() - startedAt;
-    const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+    const holdMs = getShooHoldSeconds() * 1000;
+    const progress = Math.min(1, elapsed / holdMs);
     fill.style.transform = `scaleX(${progress})`;
-    label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+    label.textContent = `Keep holding… ${Math.ceil((holdMs - elapsed) / 1000)}s`;
     if (progress >= 1) {
       stop();
       void shooCatAway();
@@ -926,6 +1017,8 @@ async function closeTour(markDone) {
   overlay.classList.add('is-hidden');
   overlay.setAttribute('aria-hidden', 'true');
   if (replay) replay.disabled = false;
+  /* The tour visits Settings; however it ends (Done, Skip, Esc, a replay), land on Cat. */
+  setActiveTab('cat');
   if (markDone) {
     try {
       await chrome.storage.local.set({ [TOUR_STORAGE_KEY]: true });

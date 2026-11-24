@@ -478,6 +478,50 @@ body {
   border-radius: 4px;
 }
 
+.option-note {
+  margin: 8px 0 0 28px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.social-sites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0 28px;
+}
+
+.social-sites.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.site-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 180, 140, 0.55);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.site-chip.is-off {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.site-chip input {
+  accent-color: var(--coral-deep, #ff6b3d);
+  margin: 0;
+}
+
 .option-row-text {
   flex: 1;
   min-width: 0;

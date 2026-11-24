@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Privacy Policy — Cat Break</title>
-<meta name="description" content="What Cat Break collects: nothing. The extension stores everything locally on your machine. The website uses Google Analytics and Vercel Web Analytics." />
+<meta name="description" content="What Cat Break collects: never your browsing history. Your settings stay on your machine; the extension sends a few anonymous usage counts you can turn off. The website uses Google Analytics and Vercel Web Analytics." />
 <link rel="canonical" href="https://www.catbreak.com/privacy.html" />
 <meta name="robots" content="index, follow" />
 
@@ -55,10 +55,10 @@
 <main class="shell legal">
   <p class="kicker">Legal</p>
   <h1>Privacy Policy</h1>
-  <p class="legal-meta">Last updated 31 July 2026</p>
+  <p class="legal-meta">Last updated 21 November 2026</p>
 
   <div class="legal-callout">
-    <p><strong>The short version.</strong> The Cat Break extension collects nothing about you — your settings and time totals never leave your browser. This website, catbreak.com, is a separate thing: it uses Google Analytics and Vercel Web Analytics to count visits. The extension and the website are unrelated, and the website's analytics can never see what you browse.</p>
+    <p><strong>The short version.</strong> The Cat Break extension never sends your browsing history — your settings and time totals never leave your browser. It does send a few anonymous usage counts (whether the cat loaded, how breaks end, which settings are in use), on by default and switched off under Settings. This website, catbreak.com, is a separate thing: it uses Google Analytics and Vercel Web Analytics to count visits. The extension and the website are unrelated, and the website's analytics can never see what you browse.</p>
   </div>
 
   <h2>1. The extension</h2>
@@ -70,7 +70,7 @@
     <li>Per-site time totals for the current day, plus the last reset date.</li>
     <li>Temporary snooze flags.</li>
   </ul>
-  <p>This data is never transmitted to us or anyone else. There is no account, no server, no sync, and no analytics inside the extension. Uninstalling it, or clearing its storage, removes all of it.</p>
+  <p>This data is never transmitted to us or anyone else. There is no account and no sync. The only things the extension sends are the anonymous usage counts described below. Uninstalling it, or clearing its storage, removes all of the data above.</p>
 
   <h3>What it accesses while running</h3>
   <ul>
@@ -79,16 +79,26 @@
   </ul>
   <p>Your browsing history is read only in memory, to decide whether a limit has been reached. It is not stored beyond the daily per-site totals described above, and it is not transmitted.</p>
 
-  <h3>The one network request it makes</h3>
+  <h3>The network requests it makes</h3>
   <p>Cat videos are fetched and cached from our Supabase storage bucket (<code>pozytitruvcthhfvpqic.supabase.co</code>). As with loading any image or video on the web, this exposes standard request metadata such as your IP address to Supabase. The request contains only the filename of the video being downloaded — no browsing history, no site names, no usage times, no identifiers.</p>
   <p>All extension code is bundled with the extension. No executable code is fetched or run remotely; only media assets are loaded at runtime, over HTTPS.</p>
+
+  <h3>Anonymous usage statistics</h3>
+  <p>The extension also sends a few anonymous counts to the same Supabase project, so we can tell whether the cat loads and how breaks go, and fix problems. It is on by default, and you can turn it off at any time under <strong>Settings &rarr; Share anonymous usage stats</strong>. Only these reports are sent:</p>
+  <ul>
+    <li><strong>When the extension starts:</strong> its version, why it started (install, update or browser start), and your settings as plain numbers and on/off values &mdash; default limit, auto-dismiss minutes, shoo hold seconds, whether &ldquo;only social media sites&rdquo;, &ldquo;only listed sites&rdquo; and random cat are on, and how many sites are in your limit and excluded lists.</li>
+    <li><strong>When a break appears:</strong> whether the animated cat played or the fallback icon was shown, for the fallback a short reason code such as <code>no_clip</code>, <code>timeout</code> or <code>play_failed</code>, and which built-in site it was on.</li>
+    <li><strong>When a break ends:</strong> how it ended (Esc held, the timer ran out, or the popup&rsquo;s Shoo button), how many seconds it was on screen, and which built-in site it was on.</li>
+  </ul>
+  <p>The &ldquo;built-in site&rdquo; is one of a fixed list that Cat Break times by default (YouTube, Instagram, Facebook, X/Twitter, TikTok, Reddit, Snapchat, Pinterest, Twitch, Threads, Tumblr, Bluesky and Amazon), or the word <code>other</code>. The name of any site that is not on that list is never sent.</p>
+  <p>Never sent: the name or URL of any site outside that fixed list, the contents of any page, your own site lists, your browsing history, or anything that identifies you. No account, device ID or other persistent identifier is attached, so one report cannot be linked to another. As with the cat videos, Supabase&rsquo;s own request logs may include standard request metadata such as your IP address; we do not store it with the statistics.</p>
 
   <h2>2. This website</h2>
 
   <h3>Google Analytics</h3>
   <p>catbreak.com uses Google Analytics 4 (measurement ID <code>G-SFGHY3T64Y</code>) so we can see how many people visit and which pages they read. It sets cookies in your browser and collects the usual analytics data: pages viewed, approximate location derived from IP, referring site, device type, and browser. Google Analytics 4 does not log full IP addresses.</p>
   <p>We use this only to understand traffic to the site. We do not sell it, and we do not use it to build advertising profiles. Google processes this data as described in <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</p>
-  <p><strong>To opt out:</strong> install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's opt-out browser add-on</a>, enable your browser's tracking protection, or block <code>googletagmanager.com</code>. Blocking it has no effect on the extension, which does not use analytics at all.</p>
+  <p><strong>To opt out:</strong> install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's opt-out browser add-on</a>, enable your browser's tracking protection, or block <code>googletagmanager.com</code>. Blocking it has no effect on the extension, which does not use Google Analytics.</p>
 
   <h3>Vercel Web Analytics</h3>
   <p>catbreak.com also uses Vercel Web Analytics. It counts page views without cookies and without storing anything on your device, so there is nothing for the cookie banner to ask permission for and it runs for every visitor. It records the page viewed, the referring site, and coarse device, browser and country information derived from the request. It cannot follow you to any other website.</p>
@@ -102,7 +112,7 @@
   <ul>
     <li>We do not sell personal data.</li>
     <li>We do not use your browsing history for advertising.</li>
-    <li>We do not transmit anything the extension records about your browsing.</li>
+    <li>We do not transmit anything the extension records about your browsing: no URLs, time totals, or the name of any site outside the fixed built-in list. The anonymous usage counts above are the only reports it sends.</li>
     <li>We do not require an account, so we hold no email address, password, or profile.</li>
   </ul>
 

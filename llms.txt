@@ -6,7 +6,7 @@
 
 Cat Break tracks **active tab time per website** and shows a **full-screen cat video** when a limit is reached — memorable, not a tiny notification. The break **auto-dismisses** after a time you choose; you can also **preview** it or **shoo** it away.
 
-- Free, no account, no ads; data stays local (`chrome.storage`)
+- Free, no account, no ads; sites and time totals stay local (`chrome.storage`); anonymous usage counts can be turned off in Settings
 - **Cat** tab: default limit, auto-dismiss, **random cat** toggle, video gallery, preview
 - **Settings** tab: **limit by site**, **excluded sites**, optional **only track listed sites** mode
 - Overlay includes **rotating playful messages**; tries to **pause videos** (incl. common shadow-DOM players); may **mute the tab** on YouTube if pause isn’t possible

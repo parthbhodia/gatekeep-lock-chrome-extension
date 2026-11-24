@@ -47,9 +47,12 @@ Stroll, Twilight Prowl, Lazy Stretch, Curious Stroll, Elegant Steps, Alley Amble
 
 ## Privacy
 
-**The extension** collects nothing: no analytics, no account, no sync, no server.
-Settings and daily totals stay in `chrome.storage` on the user's own device. The
-only network request it makes is fetching the cat video itself.
+**The extension** never sends your browsing history: no account, no sync. Settings
+and daily totals stay in `chrome.storage` on the user's own device. It makes two
+kinds of network request: fetching the cat video, and sending a few anonymous usage
+counts (whether the cat loaded, how breaks end, which settings are in use, and
+whether a break was on a built-in site like YouTube or on another site; never any
+other site name or anything identifying). The usage counts can be turned off in Settings.
 
 **The catbreak.com website** is separate and uses Google Analytics to count
 visits. That applies to the marketing site only — it has no access to anything

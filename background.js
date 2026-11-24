@@ -190,6 +190,115 @@ function bufferToBase64(buffer) {
   return btoa(binary);
 }
 
+// ─── Anonymous usage stats ────────────────────────────────────────────────────
+// Counts only, so we can see whether the cat loads and how breaks go. Never a site
+// name, URL, page content, or anything that identifies a person: every event has a
+// fixed list of allowed fields, and anything else is dropped before sending.
+// Users can turn it off under Settings; see PRIVACY.md for the full list.
+
+const USAGE_URL = 'https://pozytitruvcthhfvpqic.supabase.co/rest/v1/usage_events';
+const USAGE_EVENTS = {
+  extension_start: [
+    'reason', 'defaultLimitMin', 'lingerMin', 'shooHoldSec', 'socialOnly', 'listedOnly',
+    'randomCat', 'siteLimitCount', 'excludedCount'
+  ],
+  cat_shown: ['outcome', 'reason', 'site'],
+  break_ended: ['how', 'shownSec', 'site']
+};
+
+function cleanUsageValue(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.min(1e6, Math.max(0, Math.round(value * 10) / 10));
+  if (typeof value === 'string' && /^[a-z0-9_.-]{1,30}$/.test(value)) return value;
+  return undefined;
+}
+
+async function recordUsage(name, props = {}) {
+  try {
+    const allowed = USAGE_EVENTS[name];
+    if (!allowed) return;
+    const { settings } = await chrome.storage.local.get('settings');
+    if (settings?.shareUsage === false) return;
+
+    const clean = {};
+    for (const key of allowed) {
+      const value = cleanUsageValue(props?.[key]);
+      if (value !== undefined) clean[key] = value;
+    }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10 * 1000);
+    try {
+      await fetch(USAGE_URL, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ name, version: chrome.runtime.getManifest().version, props: clean }),
+        signal: ctrl.signal
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    // Best effort: a failed report is simply dropped.
+  }
+}
+
+async function reportStart(reason) {
+  const { settings = {} } = await chrome.storage.local.get('settings');
+  await recordUsage('extension_start', {
+    reason,
+    defaultLimitMin: Math.round((settings.defaultLimit || 0) / 60000),
+    lingerMin: settings.catLingerMinutes,
+    shooHoldSec: settings.shooHoldSeconds,
+    socialOnly: settings.limitSocialOnly === true,
+    listedOnly: settings.trackedSitesOnly === true,
+    randomCat: settings.randomCatVideo === true,
+    siteLimitCount: Object.keys(settings.siteLimits || {}).length,
+    excludedCount: (settings.excludedSites || []).length
+  });
+}
+
+/** Sites timed by default when limitSocialOnly is on: social media, plus amazon.com. Matches the domain and any subdomain (m.facebook.com, old.reddit.com). */
+// Grouped so each can be switched off in Settings (settings.socialSitesOff holds the ids that are off).
+// The popup lists the same ids; test/social.test.mjs checks the two stay in step.
+const SOCIAL_GROUPS = [
+  { id: 'youtube', domains: ['youtube.com', 'youtu.be'] },
+  { id: 'instagram', domains: ['instagram.com'] },
+  { id: 'facebook', domains: ['facebook.com'] },
+  { id: 'x', domains: ['x.com', 'twitter.com'] },
+  { id: 'tiktok', domains: ['tiktok.com'] },
+  { id: 'reddit', domains: ['reddit.com'] },
+  { id: 'snapchat', domains: ['snapchat.com'] },
+  { id: 'pinterest', domains: ['pinterest.com'] },
+  { id: 'twitch', domains: ['twitch.tv'] },
+  { id: 'threads', domains: ['threads.net', 'threads.com'] },
+  { id: 'tumblr', domains: ['tumblr.com'] },
+  { id: 'bluesky', domains: ['bsky.app'] },
+  { id: 'amazon', domains: ['amazon.com'] }
+];
+const SOCIAL_SITES = SOCIAL_GROUPS.flatMap((group) => group.domains);
+
+function isSocialDomain(domain, settings = {}) {
+  const off = Array.isArray(settings.socialSitesOff) ? settings.socialSitesOff : [];
+  return SOCIAL_GROUPS.some(
+    (group) => !off.includes(group.id) && group.domains.some((site) => domain === site || domain.endsWith(`.${site}`))
+  );
+}
+
+/** For usage stats: the built-in site a domain belongs to (m.youtube.com -> youtube.com), else 'other'. */
+function usageSiteLabel(domain) {
+  const d = typeof domain === 'string' ? domain.toLowerCase() : '';
+  return SOCIAL_SITES.find((site) => d === site || d.endsWith(`.${site}`)) || 'other';
+}
+
+/** Does time on this domain count toward a break at all? */
+function isTrackedDomain(domain, settings) {
+  if (hasExplicitSiteLimit(domain, settings)) return true;
+  if (settings.trackedSitesOnly === true) return false;
+  if (settings.limitSocialOnly === true) return isSocialDomain(domain, settings);
+  return true;
+}
+
 let activeTabId = null;
 let activeWindowId = null;
 let segmentStart = null; // Timestamp when current tracking segment started
@@ -206,10 +315,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'update') purgeStaleVideoCaches();
     warmSelectedVideo();
   }
+  reportStart(details.reason);
 });
 chrome.runtime.onStartup.addListener(async () => {
   await init();
   warmSelectedVideo(); // Re-cache only if browser data was cleared
+  reportStart('startup');
 });
 
 async function init() {
@@ -222,8 +333,12 @@ async function init() {
         excludedSites: [],
         enabled: true,
         catLingerMinutes: 2,
+        shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
+        limitSocialOnly: true, // new installs start with social sites only
+        socialSitesOff: [],
+        shareUsage: true,
         randomCatVideo: false
       },
       siteTime: {},
@@ -233,12 +348,19 @@ async function init() {
   } else {
     // Always merge defaults so any newly-added settings field is present for
     // existing users without needing per-field migration guards.
+    // Existing users get social-only too, once, if they never customised which sites are timed.
+    // Anyone with their own site list or list-only mode keeps exactly what they had.
+    const untouched = settings.trackedSitesOnly !== true && Object.keys(settings.siteLimits || {}).length === 0;
     await chrome.storage.local.set({
       settings: {
         defaultLimit: 30 * 60 * 1000,
         catLingerMinutes: 2,
+        shooHoldSeconds: 10,
         catVideoFile: DEFAULT_CAT_VIDEO_FILE,
         trackedSitesOnly: false,
+        limitSocialOnly: untouched,
+        socialSitesOff: [],
+        shareUsage: true,
         randomCatVideo: false,
         ...settings
       }
@@ -406,7 +528,7 @@ async function flush() {
     return;
   }
 
-  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) {
+  if (!isTrackedDomain(domain, settings)) {
     segmentStart = Date.now();
     await persistTrackingState();
     return;
@@ -433,7 +555,7 @@ async function checkAndNotify() {
   if (!settings.enabled) return;
   if (isExcludedDomain(domain, settings.excludedSites)) return;
 
-  if (settings.trackedSitesOnly === true && !hasExplicitSiteLimit(domain, settings)) return;
+  if (!isTrackedDomain(domain, settings)) return;
 
   const timeSpent = siteTime[domain] || 0;
   const limit = getDomainLimit(domain, settings);
@@ -450,6 +572,7 @@ async function checkAndNotify() {
       timeSpent,
       limit,
       lingerMs: getCatLingerMs(settings),
+      shooHoldMs: getShooHoldMs(settings),
       videoFile: await resolveCatVideoFileForBreak(settings)
     };
 
@@ -493,6 +616,7 @@ function getDomainLimit(domain, settings) {
   const alt = `www.${domain}`;
   if (alt in siteLimits) return siteLimits[alt];
   if (settings.trackedSitesOnly === true) return 0;
+  if (settings.limitSocialOnly === true && !isSocialDomain(domain, settings)) return 0;
   return settings.defaultLimit ?? 30 * 60 * 1000;
 }
 
@@ -504,6 +628,11 @@ function hasExplicitSiteLimit(domain, settings) {
   if (Object.prototype.hasOwnProperty.call(siteLimits, altKey)) return true;
   const norm = normalizeDomain(domain);
   return Object.keys(siteLimits).some((key) => normalizeDomain(key) === norm);
+}
+
+function getShooHoldMs(settings) {
+  const seconds = Math.round(Number(settings.shooHoldSeconds));
+  return (Number.isFinite(seconds) && seconds >= 1 ? Math.min(60, seconds) : 10) * 1000;
 }
 
 function getCatLingerMs(settings) {
@@ -706,6 +835,12 @@ async function handleMessage(msg) {
       const buffer = (await loadVideoBuffer(msg.file)) || (await loadAnyCachedVideoBuffer());
       if (!buffer) return { ok: false };
       return { ok: true, base64: bufferToBase64(buffer) };
+    }
+    case 'USAGE': {
+      // `site` is only ever one of our built-in sites or 'other': the real domain is used here to pick
+      // one and is never forwarded, and a site passed in by the caller is ignored.
+      void recordUsage(msg.name, { ...msg.props, site: usageSiteLabel(msg.props?.domain) });
+      return { ok: true };
     }
     case 'GET_CAT_VIDEOS_LIST': {
       const files = await getVideoManifest();

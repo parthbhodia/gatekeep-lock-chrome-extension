@@ -44,7 +44,7 @@
       </div>
 
       <div class="section">
-        <span class="label">Cat auto-dismiss <span class="info" aria-label="Help: auto-dismiss timer" data-tooltip="How long the break cat stays on screen before it closes by itself. You can end it sooner by holding Esc, or holding the Shoo button here, for 10 seconds."></span></span>
+        <span class="label">Cat auto-dismiss <span class="info" aria-label="Help: auto-dismiss timer" data-tooltip="How long the break cat stays on screen before it closes by itself. You can end it sooner by holding Esc, or holding the Shoo button here (hold time is under Settings)."></span></span>
         <div class="chip-row" id="cat-linger-chips"></div>
         <div class="custom-row">
           <input type="number" id="cat-linger" min="0.1" max="60" step="0.1" class="num-input">
@@ -83,6 +83,16 @@
         </div>
       </div>
 
+      <div class="section">
+        <label class="option-row" for="limit-social-only">
+          <input type="checkbox" id="limit-social-only" class="option-checkbox">
+          <span class="option-row-text">Only limit social media sites</span>
+          <span class="info" role="img" aria-label="Help: social media only" data-tooltip="Timer and break cat only on the sites ticked below, plus anything on Limit by site. Everywhere else: no tracking. Off: default limit applies to all non-excluded sites."></span>
+        </label>
+        <p class="option-note">Timed sites. Untick any you don't want, or add others under Limit by site.</p>
+        <div class="social-sites" id="social-sites"></div>
+      </div>
+
       <div class="section" id="tour-anchor-listed-only">
         <label class="option-row" for="tracked-sites-only">
           <input type="checkbox" id="tracked-sites-only" class="option-checkbox">
@@ -109,6 +119,23 @@
           <input type="text" id="exclude-domain" placeholder="example.com" class="site-input">
           <button id="exclude-add-btn" class="add-btn">Exclude</button>
         </div>
+      </div>
+
+      <div class="section">
+        <span class="label">Shoo hold time <span class="info" aria-label="Help: shoo hold time" data-tooltip="How long you hold Esc (or the Shoo button) to send the cat away early. Longer makes it harder to dismiss on reflex."></span></span>
+        <div class="chip-row" id="shoo-hold-chips"></div>
+        <div class="custom-row">
+          <input type="number" id="shoo-hold" min="1" max="60" step="1" class="num-input">
+          <span class="unit">seconds (custom)</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <label class="option-row" for="share-usage">
+          <input type="checkbox" id="share-usage" class="option-checkbox">
+          <span class="option-row-text">Share anonymous usage stats</span>
+          <span class="info" role="img" aria-label="Help: usage stats" data-tooltip="Anonymous counts only: whether the cat loaded, how breaks end, which settings are in use, and whether a break was on one of the built-in sites (YouTube, Instagram, Amazon and so on) or on another site. Never any other site name, page content, or anything that identifies you. Turn off any time."></span>
+        </label>
       </div>
 
       <div class="section is-hidden" id="quick-action-section">

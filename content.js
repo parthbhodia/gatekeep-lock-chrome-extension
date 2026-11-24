@@ -32,7 +32,8 @@ const VIDEO_LOAD_TIMEOUT_MS = 20 * 1000;
    instantly, which made dismissing it reflexive — the thing the break exists to
    interrupt. Holding for the full duration is long enough that you have to
    actually decide to do it. Let go early and it resets to zero. */
-const SHOO_HOLD_MS = 10 * 1000;
+const DEFAULT_SHOO_HOLD_MS = 10 * 1000;
+let shooHoldMs = DEFAULT_SHOO_HOLD_MS; // per break; the background sends the user's setting
 const HOLD_IDLE_HTML = 'Hold <b class="fcb-kbd">Esc</b> to shoo the cat away';
 const DEFAULT_CAT_VIDEO_FILE = 'cat-morning-paws.mp4';
 const BRIDAL_TIPS_VIDEO_FILE = 'cat-elegant-steps.mp4';
@@ -134,7 +135,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === 'SHOO_CAT') {
     if (catOverlay) {
-      dismissWithOptions({ resetSite: true, resumePaused: true });
+      dismissWithOptions({ resetSite: true, resumePaused: true, how: 'popup' });
       safeSendResponse(sendResponse, { ok: true, dismissed: true });
       return;
     }
@@ -144,11 +145,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === 'SHOW_CAT') {
     if (catOverlay) return;
-    showCat(msg.domain, msg.timeSpent, msg.limit, msg.lingerMs, msg.videoFile);
+    showCat(msg.domain, msg.timeSpent, msg.limit, msg.lingerMs, msg.videoFile, msg.shooHoldMs);
   }
 });
 
-async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE) {
+async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, videoFile = DEFAULT_CAT_VIDEO_FILE, holdMs = DEFAULT_SHOO_HOLD_MS) {
+  shooHoldMs = Math.min(60 * 1000, Math.max(1000, Number(holdMs) || DEFAULT_SHOO_HOLD_MS));
   videoFile = normalizeVideoFile(videoFile) || DEFAULT_CAT_VIDEO_FILE;
   currentDomain = domain;
   catShownAt = Date.now();
@@ -243,18 +245,21 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   }, 250);
 
   hideTimer = setTimeout(() => {
-    dismissWithOptions({ resetSite: true, resumePaused: true });
+    dismissWithOptions({ resetSite: true, resumePaused: true, how: 'timer' });
   }, safeLingerMs);
 
+  let failure = 'no_clip';
   try {
     const src = await withTimeout(getCatVideoUrl(safeVideoFile), VIDEO_LOAD_TIMEOUT_MS);
     if (!src) throw new Error('clip unavailable');
+    failure = 'play_failed';
     video.src = src;
     await video.play();
     setupCanvas(video, canvas, buffer);
     drawCatFrame(video, canvas, ctx, buffer, bufferCtx);
-  } catch {
-    showStaticCat();
+    reportUsage('cat_shown', { outcome: 'video' });
+  } catch (error) {
+    showStaticCat(error?.message === 'timed out' ? 'timeout' : failure);
   }
 }
 
@@ -396,9 +401,10 @@ function withTimeout(promise, ms) {
 }
 
 /** The clip couldn't be had (offline, host refusing): put the app icon where the cat would be, so the break still has one. */
-function showStaticCat() {
+function showStaticCat(reason) {
   const wrap = catOverlay?.querySelector('.fcb-cat-wrap');
   if (!wrap || !isExtensionContextValid()) return;
+  reportUsage('cat_shown', { outcome: 'static', reason });
   catOverlay.classList.add('fcb-cat-static');
   const img = document.createElement('img');
   img.className = 'fcb-static-cat';
@@ -535,17 +541,17 @@ function stepShooHold() {
   if (!holdStartedAt || !catOverlay) return;
 
   const elapsed = Date.now() - holdStartedAt;
-  const progress = Math.min(1, elapsed / SHOO_HOLD_MS);
+  const progress = Math.min(1, elapsed / shooHoldMs);
 
   if (holdEls) {
     holdEls.fill.style.setProperty('transform', `scaleX(${progress})`, 'important');
     holdEls.root.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
-    holdEls.label.textContent = `Keep holding… ${Math.ceil((SHOO_HOLD_MS - elapsed) / 1000)}s`;
+    holdEls.label.textContent = `Keep holding… ${Math.ceil((shooHoldMs - elapsed) / 1000)}s`;
   }
 
   if (progress >= 1) {
     stopShooHold();
-    dismissWithOptions({ resetSite: true, resumePaused: true });
+    dismissWithOptions({ resetSite: true, resumePaused: true, how: 'hold' });
     return;
   }
   holdRafId = requestAnimationFrame(stepShooHold);
@@ -571,12 +577,19 @@ function stopShooHold() {
 }
 
 function dismiss() {
-  dismissWithOptions({ resetSite: false, resumePaused: false });
+  dismissWithOptions({ resetSite: false, resumePaused: false, how: 'other' });
+}
+
+/** Anonymous, fixed-shape counts only; the background drops anything else (see PRIVACY.md). */
+function reportUsage(name, props) {
+  // The domain goes only as far as the background, which reduces it to one of our built-in sites or 'other'.
+  safeSendRuntimeMessage({ type: 'USAGE', name, props: { ...props, domain: currentDomain } });
 }
 
 function dismissWithOptions(options = {}) {
-  const { resetSite = false, resumePaused = false } = options;
+  const { resetSite = false, resumePaused = false, how = 'other' } = options;
   if (!catOverlay) return;
+  reportUsage('break_ended', { how, shownSec: (Date.now() - catShownAt) / 1000 });
 
   const overlayEl = catOverlay;
   catOverlay = null;
