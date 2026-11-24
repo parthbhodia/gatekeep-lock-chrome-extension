@@ -514,7 +514,6 @@ body {
 
 .site-chip.is-off {
   opacity: 0.55;
-  text-decoration: line-through;
 }
 
 .site-chip input {
