@@ -82,7 +82,7 @@
     banner.innerHTML =
       '<p class="cookie-title">🐾 A quick one about cookies</p>' +
       '<p class="cookie-body">We’d like to use Google Analytics to count visits to this site. ' +
-      'It sets cookies. The <strong>extension</strong> never does any of this — it still reports nothing, ever. ' +
+      'It sets cookies. The <strong>extension</strong> never does any of this — no cookies, and it never sends your browsing history. ' +
       '<a href="privacy.html">Read the policy</a>.</p>' +
       '<div class="cookie-actions">' +
       '<button type="button" class="btn btn-primary btn-sm" data-consent="granted">Allow analytics</button>' +
