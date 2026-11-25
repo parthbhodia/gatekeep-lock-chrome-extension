@@ -47,36 +47,43 @@ meow lines) lives in `Shared/` and is compiled into every target.
 
 ```sh
 cd ios
-xcodegen generate
+./setup.sh com.yourname      # your identifiers everywhere, verified, + xcodegen
 open CatBreak.xcodeproj
 ```
 
+`setup.sh` is the whole of the old step 1. The `com.catbreak` prefix in the
+repo is a placeholder, and it appears in nine files — the XcodeGen spec, five
+`.entitlements` files, `SharedConstants.appGroup`, the app's `CFBundleURLName`
+and the CI workflow. They all have to agree: if an extension's entitlements
+name a different App Group than `SharedConstants.appGroup`, nothing errors,
+the extension just reads an empty store. So the script rewrites all nine,
+checks the result, and runs `xcodegen generate`.
+
+| Flag | Effect |
+|---|---|
+| `--team ABCDE12345` | also fills in `DEVELOPMENT_TEAM` in `project.yml` |
+| `--check` | verify only, change nothing — run it any time |
+| `--no-generate` | skip `xcodegen generate` |
+
+`./setup.sh com.yourname` and `./setup.sh com.yourname.catbreak` mean the same
+thing, and re-running it with a different prefix renames again.
+
 Then, in Xcode:
 
-1. **Rename the identifiers to yours** (the `com.catbreak` prefix is a
-   placeholder). From the `ios/` folder:
-
-   ```sh
-   # bundle id prefix (5 targets)
-   sed -i '' 's/com\.catbreak/com.YOURNAME.catbreak/g' project.yml
-   # app group (5 entitlements files + the Swift constant)
-   grep -rl 'group\.com\.catbreak\.shared' . | xargs sed -i '' 's/group\.com\.catbreak\.shared/group.com.YOURNAME.catbreak/g'
-   xcodegen generate
-   ```
-
-2. Select your **Team** on all five targets (Signing & Capabilities).
+1. Select your **Team** on all five targets (Signing & Capabilities).
    With automatic signing, Xcode registers the bundle ids, the App Group, and
    the **Family Controls (development)** capability for you. If the capability
    is missing on a target, add it manually: + Capability → Family Controls.
-3. Select your device and **Run**. On first launch, tap "Allow Screen Time
+2. Select your device and **Run**. On first launch, tap "Allow Screen Time
    access" and approve the system prompt.
-4. In **Settings → Choose apps to limit**, pick something you actually use,
+3. In **Settings → Choose apps to limit**, pick something you actually use,
    set a short default limit (e.g. 15 min), then go use that app.
 
 ## Things to know before you judge the cat
 
-- **The shield is a static template.** Icon, title, subtitle, two buttons —
-  that's every pixel iOS lets any third-party app customize. The cat video
+- **The shield is a static template.** Icon, title, subtitle, two buttons,
+  and a backdrop (blur and/or a color) — that's every pixel iOS lets any
+  third-party app customize. No video, no ticking countdown. The cat video
   experience lives in the main app.
 - **Thresholds are not to-the-second.** DeviceActivity events can fire a few
   minutes late. The timer is iOS's own Screen Time accounting (per-app
@@ -97,7 +104,66 @@ Then, in Xcode:
   extension id*: <https://developer.apple.com/contact/request/family-controls-distribution>
   Expect a form about why you need it and some waiting.
 
+## Getting the cat ON TOP of Instagram
+
+iOS never lets one app draw arbitrary UI over another (no Android-style
+overlay permission; the system PiP tile is the only floating video, and it's
+a small, system-controlled box). So the cat takes the WHOLE screen instead,
+with the extension's overlay recreated in the app:
+
+1. **Cat greetings** (`CatOverlayView` + `GreetingSetupView`) — a one-time
+   Shortcuts personal automation ("When Instagram is opened → Open URL
+   `catbreak://break?return=instagram`") flips the screen to Cat Break the
+   moment the app launches. The overlay is the extension's break, ported:
+   the chroma-keyed cat — `ChromaKey` bakes content.js's getGreenKeyStrength
+   into a Core Image color cube applied as an AVVideoComposition, so the cat
+   is a true cut-out, not a video rectangle — walks the screen under a giant
+   countdown card. When the countdown ends (greeting length setting) or the
+   user shoos, it steps aside into the app.
+2. **Over the limit, the cat lingers** — same overlay, but the countdown runs
+   to the end of the break, and Continue only appears afterwards.
+3. **The shield** (`ShieldConfigExtension`) — the closest thing to the
+   extension's overlay, because it's the ONE real see-through cover iOS
+   grants: once you're over the limit, the system draws it over the live
+   app the instant the app opens (the same "already over the limit? cat."
+   check background.js runs on every tab switch). Its backdrop mirrors
+   content.css's `.fcb-backdrop` — no blur, a faint dark tint — so Instagram
+   itself stays sharp behind the cat image, the minutes left in the break,
+   the meow line, and the buttons (Settings → "Behind the cat" swaps in
+   iOS's frosted material if the tint reads badly over a bright feed).
+   Static template only: Apple allows no video there and the countdown
+   can't tick — it's recomputed each time the shield appears. The image is
+   a REAL cat: the app pre-bakes chroma-keyed stills from the cat videos
+   into the App Group (`ShieldCatBaker`); the shield picks one per break —
+   the bundled logo is only a first-run fallback. When a short break has
+   elapsed but the shield is still up, it says "Break's over" and the
+   button becomes "Let me in".
+
+What iOS cannot do, honestly: render Instagram's own pixels behind an APP
+(apps are sandboxed; there is no cross-app capture), or float a borderless
+video over another app. So the video overlay brings its own night backdrop,
+while the shield — drawn by the system, not by the app — is where the real
+Instagram shows through.
+
+Loop guard: returning to Instagram re-triggers the automation, so the
+`Is the cat napping?` Shortcuts action (`CatNappingIntent`) answers Yes for
+3 minutes after each greeting, and the deep-link handler bounces straight
+back if a greeting arrives mid-nap. The in-app setup screen
+(Settings → Cat greetings) walks the user through all of it.
+
+## CI: build + simulator screenshot without a Mac
+
+`.github/workflows/ios-build.yml` runs on GitHub's macOS runners for every
+push touching `ios/`: XcodeGen → unsigned simulator build → boots a
+simulator, launches the app with the `-catbreak-ui-preview` launch argument
+(skips the Screen Time gate, UI only) and captures two screenshots — the tabs and the break overlay itself
+(`-catbreak-overlay-preview`) — uploaded as the `simulator-screenshots`
+artifact on the run page. Screen Time behavior itself
+still needs a real device — the simulator renders the UI but cannot grant
+FamilyControls authorization.
+
 ## Status
+
 
 This scaffold was authored off-Mac (no Xcode available), so it has **not been
 compiled yet**. The API usage follows Apple's documented Screen Time surface,
