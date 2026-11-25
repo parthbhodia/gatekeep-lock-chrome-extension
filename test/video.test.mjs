@@ -74,7 +74,7 @@ function makeEnv({ settings } = {}) {
     }
   };
 
-  const net = { log: [], mode: 'ok', delayMs: 0 };
+  const net = { log: [], mode: 'ok', delayMs: 0, clip: CLIP };
   const fetchStub = async (url, opts = {}) => {
     net.log.push(url);
     if (url.includes('/object/list/')) {
@@ -85,7 +85,7 @@ function makeEnv({ settings } = {}) {
       return new Promise((_, reject) => opts.signal?.addEventListener('abort', () => reject(new Error('aborted'))));
     }
     if (net.delayMs) await sleep(net.delayMs);
-    return new Response(CLIP, { status: 200, headers: { 'Content-Type': 'video/mp4' } });
+    return new Response(net.clip, { status: 200, headers: { 'Content-Type': 'video/mp4' } });
   };
 
   const sandbox = {
@@ -125,6 +125,28 @@ async function main() {
     ok('GET_CAT_VIDEO reply has no raw buffer (JSON would turn it into {})', !('buffer' in wire));
     ok('clip bytes survive the JSON round-trip', Buffer.from(wire.base64, 'base64').equals(CLIP));
     ok('content script decodes what the worker sends', Buffer.from(base64ToBytes(wire.base64)).equals(CLIP));
+  }
+
+  // 1b) Big clips come in parts that each fit in one message, and reassemble exactly.
+  {
+    const env = makeEnv();
+    const BIG = Buffer.alloc(20 * 1024 * 1024 + 12345);
+    for (let i = 0; i < BIG.length; i += 4093) BIG[i] = i % 251;
+    env.net.clip = BIG;
+    const first = await env.ask({ type: 'GET_CAT_VIDEO', file: 'cat-twilight-prowl.mp4' });
+    ok('a 20 MB clip is split into parts', first.ok && first.parts === 3, `parts=${first.parts}`);
+    const pieces = [Buffer.from(first.base64, 'base64')];
+    for (let part = 1; part < first.parts; part += 1) {
+      const r = JSON.parse(JSON.stringify(await env.ask({ type: 'GET_CAT_VIDEO', file: 'cat-twilight-prowl.mp4', part })));
+      pieces.push(Buffer.from(r.base64, 'base64'));
+    }
+    const biggestMessage = Math.max(...pieces.map((b) => Math.ceil(b.length / 3) * 4));
+    ok('every part is far below the 64 MB message cap', biggestMessage < 12 * 1024 * 1024, `${(biggestMessage / 1048576).toFixed(1)} MB`);
+    ok('the parts reassemble to the exact clip', Buffer.concat(pieces).equals(BIG));
+    ok('the clip was downloaded once for all parts', env.mp4Fetches().length === 1, `${env.mp4Fetches().length} downloads`);
+    ok('asking past the last part fails cleanly', (await env.ask({ type: 'GET_CAT_VIDEO', file: 'cat-twilight-prowl.mp4', part: 3 })).ok === false);
+    env.net.clip = CLIP;
+    ok('small clips still come in one part', (await env.ask({ type: 'GET_CAT_VIDEO', file: 'cat-morning-paws.mp4' })).parts === 1);
   }
 
   // 2) Cache-first: a clip is downloaded once, then served from disk.

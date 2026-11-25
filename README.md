@@ -63,7 +63,7 @@ Per-site and exclusion options live under **Settings**; the **Cat** tab focuses 
 - **Hard to ignore** — full-screen cat, not a tiny toast.
 - **Not punishing** — the overlay leaves after your break; you stay in control.
 - **Honest timing** — only counts real **active** tab time.
-- **Private** — your browsing never leaves your device; only anonymous usage counts are sent, and you can turn that off in Settings. See [PRIVACY.md](./PRIVACY.md).
+- **Private** — your browsing history never leaves your device; only anonymous usage counts are sent (including which built-in site, like YouTube, a break was on), and you can turn that off in Settings. See [PRIVACY.md](./PRIVACY.md).
 
 ---
 
