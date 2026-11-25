@@ -10,6 +10,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable__RWZ07cSXRVJsMRnNoUjww_rGfM1dB6';
 const VIDEO_CACHE_NAME = 'cat-videos-v1';
 const VIDEO_FETCH_TIMEOUT_MS = 30 * 1000;
 const pendingVideoDownloads = new Map();
+// Chrome caps one extension message at 64 MB and base64 adds a third, so clips travel in parts.
+const VIDEO_PART_BYTES = 8 * 1024 * 1024;
+let lastVideo = null; // { file, buffer }: the parts of one clip are cut from the same bytes
 
 /** Strip legacy assets/ prefix so all file keys are flat (e.g. 'cat-curious-stroll.mp4'). */
 function normalizeVideoFile(file) {
@@ -831,10 +834,18 @@ async function handleMessage(msg) {
       return { ok: true };
     }
     case 'GET_CAT_VIDEO': {
-      // The requested clip, else any cached one, so a bad name or a refusing host still gets a cat.
-      const buffer = (await loadVideoBuffer(msg.file)) || (await loadAnyCachedVideoBuffer());
-      if (!buffer) return { ok: false };
-      return { ok: true, base64: bufferToBase64(buffer) };
+      const part = Number.isInteger(msg.part) && msg.part > 0 ? msg.part : 0;
+      let buffer = part > 0 && lastVideo?.file === msg.file ? lastVideo.buffer : null;
+      if (!buffer) {
+        // The requested clip, else any cached one, so a bad name or a refusing host still gets a cat.
+        buffer = (await loadVideoBuffer(msg.file)) || (await loadAnyCachedVideoBuffer());
+        if (!buffer) return { ok: false };
+        lastVideo = { file: msg.file, buffer };
+      }
+      const parts = Math.max(1, Math.ceil(buffer.byteLength / VIDEO_PART_BYTES));
+      if (part >= parts) return { ok: false };
+      const start = part * VIDEO_PART_BYTES;
+      return { ok: true, part, parts, base64: bufferToBase64(buffer.slice(start, start + VIDEO_PART_BYTES)) };
     }
     case 'USAGE': {
       // `site` is only ever one of our built-in sites or 'other': the real domain is used here to pick

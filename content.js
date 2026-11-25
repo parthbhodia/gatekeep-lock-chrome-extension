@@ -166,6 +166,8 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   const durationPhrase = formatDurationForBreak(timeSpent);
   const limitPhrase = formatDurationForBreak(limit);
 
+  // An earlier break can still be fading out; with two overlays the lookups below would find its elements.
+  document.querySelectorAll('#fcb-overlay').forEach((el) => el.remove());
   catOverlay = document.createElement('div');
   catOverlay.id = 'fcb-overlay';
   catOverlay.innerHTML = `
@@ -196,11 +198,11 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
     catOverlay.classList.add('fcb-cat-nudge-right');
   }
 
-  const video = document.getElementById('fcb-source-video');
-  const canvas = document.getElementById('fcb-cat-canvas');
-  const timer = document.getElementById('fcb-timer');
-  const card = document.getElementById('fcb-card');
-  const cardClose = document.getElementById('fcb-card-close');
+  const video = catOverlay.querySelector('#fcb-source-video');
+  const canvas = catOverlay.querySelector('#fcb-cat-canvas');
+  const timer = catOverlay.querySelector('#fcb-timer');
+  const card = catOverlay.querySelector('#fcb-card');
+  const cardClose = catOverlay.querySelector('#fcb-card-close');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const buffer = document.createElement('canvas');
   const bufferCtx = buffer.getContext('2d', { willReadFrequently: true });
@@ -209,9 +211,9 @@ async function showCat(domain, timeSpent, limit, lingerMs = DEFAULT_LINGER_MS, v
   cardClose?.addEventListener('click', hideDialog);
   dialogHideTimer = setTimeout(hideDialog, DIALOG_HIDE_MS);
   holdEls = {
-    root: document.getElementById('fcb-hold'),
-    fill: document.getElementById('fcb-hold-fill'),
-    label: document.getElementById('fcb-hold-label')
+    root: catOverlay.querySelector('#fcb-hold'),
+    fill: catOverlay.querySelector('#fcb-hold-fill'),
+    label: catOverlay.querySelector('#fcb-hold-label')
   };
 
   keydownHandler = (event) => {
@@ -371,9 +373,15 @@ async function getCatVideoUrl(videoFile) {
   if (catVideoUrls.has(videoFile)) return catVideoUrls.get(videoFile);
   try {
     if (!isExtensionContextValid()) return '';
-    const res = await sendRuntimeMessageAsync({ type: 'GET_CAT_VIDEO', file: videoFile });
-    if (!res?.ok || typeof res.base64 !== 'string') return '';
-    const blob = new Blob([base64ToBytes(res.base64)], { type: 'video/mp4' });
+    // Big clips arrive in parts: one message can't carry more than 64 MB.
+    const chunks = [];
+    for (let part = 0, parts = 1; part < parts; part += 1) {
+      const res = await sendRuntimeMessageAsync({ type: 'GET_CAT_VIDEO', file: videoFile, part });
+      if (!res?.ok || typeof res.base64 !== 'string') return '';
+      parts = Math.min(Number(res.parts) || 1, 64);
+      chunks.push(base64ToBytes(res.base64));
+    }
+    const blob = new Blob(chunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     catVideoUrls.set(videoFile, url); // cache blob URL for reuse
     return url;
@@ -643,7 +651,7 @@ function dismissWithOptions(options = {}) {
 }
 
 function hideDialog() {
-  const card = document.getElementById('fcb-card');
+  const card = catOverlay?.querySelector('#fcb-card');
   if (!card || card.classList.contains('fcb-card-hidden')) return;
   card.classList.add('fcb-card-hidden');
   setTimeout(() => card.remove(), 260);
